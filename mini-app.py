@@ -19,7 +19,7 @@ mapping = {
 }
 
 # Interface
-st.set_page_config(page_title="Orientation Métiers", page_icon="🎯")
+st.set_page_config(page_title="Orientation Metiers", page_icon="🎯")
 st.title("🎯 Questionnaire : Profil de Competences & Orientation Metiers")
 
 with st.form("profil_form"):
@@ -73,12 +73,14 @@ if submitted:
 
     st.subheader("🗂️ Plan d'action personnalise")
     st.markdown(f"""
-    - **Nom / Pseudo :** {nom}
-    - **Objectif metier(s) vise(s) :** {metiers_souhaites if metiers_souhaites else "Non precise"}
-    - **Formations a envisager :** {"Oui" if formation_futur == "Oui" else "A discuter"}
-    - **Competences a valoriser :** {", ".join(soft_skills)}
-    - **Types de poste :** {", ".join(domaines)} / {", ".join(taches)}
-    """)
+    <div style="text-align: center; line-height: 1.8; font-size: 16px">
+        <strong>Nom / Pseudo :</strong> {nom}<br>
+        <strong>Objectif metier(s) vise(s) :</strong> {metiers_souhaites if metiers_souhaites else "Non precise"}<br>
+        <strong>Formations a envisager :</strong> {"Oui" if formation_futur == "Oui" else "A discuter"}<br>
+        <strong>Competences a valoriser :</strong> {", ".join(soft_skills)}<br>
+        <strong>Types de poste :</strong> {", ".join(domaines)} / {", ".join(taches)}
+    </div>
+    """, unsafe_allow_html=True)
 
     # PDF
     pdf = FPDF()
