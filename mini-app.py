@@ -67,7 +67,7 @@ if submitted:
     for t in taches:
         if t in mapping:
             code, metier = mapping[t]
-            url = f"https://candidat.francetravail.fr/metiers/{code}"
+            url = f"https://candidat.francetravail.fr/metierscope/fiche-metier/{code}"
             suggestions.append((metier, code, url))
             st.markdown(f"- **{metier}** (ROME : `{code}`) – [Fiche]({url})")
 
