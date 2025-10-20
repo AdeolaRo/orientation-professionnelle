@@ -22,13 +22,13 @@ def load_rome_data():
     """Charge les données ROME depuis les fichiers CSV"""
     try:
         # Charger les métiers
-        metiers_df = pd.read_csv('RefRomeCSV/unix_referentiel_code_rome_v460_utf8.csv')
+        metiers_df = pd.read_csv('RefRomeCsv/unix_referentiel_code_rome_v460_utf8.csv')
         
         # Charger les compétences
-        competences_df = pd.read_csv('RefRomeCSV/unix_referentiel_competence_v460_utf8.csv')
+        competences_df = pd.read_csv('RefRomeCsv/unix_referentiel_competence_v460_utf8.csv')
         
         # Charger les centres d'intérêt
-        centres_interet_df = pd.read_csv('RefRomeCSV/unix_centre_interet_v460_utf8.csv')
+        centres_interet_df = pd.read_csv('RefRomeCsv/unix_centre_interet_v460_utf8.csv')
         
         return metiers_df, competences_df, centres_interet_df
     except Exception as e:
