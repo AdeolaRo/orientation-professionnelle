@@ -26,19 +26,18 @@ def load_rome_data():
 
 # Fonction de matching améliorée
 def matcher_metiers(metiers_df, correspondances_df, centres_interet_selection, competences_tech, soft_skills, secteur):
-    # Extraire les codes des centres d'intérêt sélectionnés
     codes_centre_selectionnes = [ci.split(" - ")[0] for ci in centres_interet_selection]
-
-    # Lier métiers avec centres d’intérêt sélectionnés
     metiers_associes = correspondances_df[
         correspondances_df["code_centre_interet"].isin(codes_centre_selectionnes)
     ]["code_rome"].unique()
-
     metiers_filtres = metiers_df[metiers_df["code_rome"].isin(metiers_associes)].copy()
 
     if metiers_filtres.empty:
-        return metiers_df.sample(5)  # fallback si aucun matching
+        sample_df = metiers_df.sample(5).copy()
+        sample_df["score"] = 0
+        return sample_df
 
+    # Initialisation de la colonne score
     metiers_filtres["score"] = 0
 
     for i, row in metiers_filtres.iterrows():
@@ -128,10 +127,12 @@ if metiers_df is not None and correspondances_df is not None:
             code_rome = metier["code_rome"]
             libelle = metier["libelle_rome"]
             url = f"https://candidat.francetravail.fr/metierscope/fiche-metier/{code_rome}"
+            score = metier.get("score", 0) 
 
             with st.expander(f"**{libelle}** (ROME : {code_rome})"):
                 st.write(f"🔗 [Voir la fiche métier]({url})")
-                st.write(f"🧮 **Score de pertinence :** {metier['score']}/3")
+                st.write(f"🧮 **Score de pertinence :** {score}/3")
+                st.write(f"🔍 **Description :** {metier.get('description_rome', 'Non disponible')}")
 
         st.subheader("📋 Plan d'action personnalisé")
         plan_html = f"""
