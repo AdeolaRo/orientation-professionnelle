@@ -15,7 +15,8 @@ Application web interactive pour l'évaluation des compétences et l'orientation
 
 ## 🛠️ Outils inclus
 
-- **mini-app.py** : Application web interactive (Streamlit)
+- **mini-app-rome.py** : Application web interactive avec données ROME officielles (Streamlit)
+- **mini-app.py** : Application web interactive simplifiée (Streamlit)
 - **presentation.py** : Générateur de présentation PowerPoint
 - **PassActive.py** : Générateur de questionnaire PDF
 
@@ -60,15 +61,19 @@ Application web interactive pour l'évaluation des compétences et l'orientation
 2. Le fichier `Questionnaire_Profil_Competences.pdf` sera généré
 
 ### Application Web Interactive
-1. Lancez l'application Streamlit :
-   ```bash
-   ./run_app.sh
-   ```
-   Ou manuellement :
-   ```bash
-   source venv/bin/activate
-   streamlit run mini-app.py
-   ```
+
+#### Version avec données ROME officielles (recommandée)
+```bash
+source venv/bin/activate
+streamlit run mini-app-rome.py
+```
+
+#### Version simplifiée
+```bash
+source venv/bin/activate
+streamlit run mini-app.py
+```
+
 2. Ouvrez votre navigateur sur http://localhost:8501
 3. Utilisez l'interface pour répondre au questionnaire et obtenir des suggestions de métiers
 
