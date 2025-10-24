@@ -13,11 +13,11 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.francetravail.fr',
         'Report a bug': "https://github.com/AdeolaRo/orientation-professionnelle/issues",
-        'About': "Simulateur d'aides à la formation - Version 3.2"
+        'About': "Simulateur d'aides à la formation - Version 3.3"
     }
 )
 
-APP_VERSION = "3.2.0"
+APP_VERSION = "3.3.0"
 LAST_UPDATE = "2025-10-24"
 
 # ------------------------------------
@@ -46,6 +46,22 @@ st.markdown("""
             --card-bg: #262730;
             --border-color: #3a3a3a;
         }
+    }
+    
+    /* Mode sombre forcé par l'utilisateur */
+    .dark-theme {
+        --text-color: #f0f0f0 !important;
+        --bg-color: #0e1117 !important;
+        --card-bg: #262730 !important;
+        --border-color: #3a3a3a !important;
+    }
+    
+    /* Mode clair forcé par l'utilisateur */
+    .light-theme {
+        --text-color: #262730 !important;
+        --bg-color: #ffffff !important;
+        --card-bg: #f8f9fa !important;
+        --border-color: #e0e0e0 !important;
     }
     
     /* Header principal */
@@ -163,6 +179,20 @@ st.markdown("""
         opacity: 0.7;
     }
 </style>
+
+<script>
+    // Appliquer le thème sélectionné
+    function applyTheme(theme) {
+        const body = document.body;
+        body.classList.remove('light-theme', 'dark-theme');
+        body.classList.add(theme + '-theme');
+    }
+    
+    // Appliquer le thème au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        // Le thème sera appliqué via Streamlit
+    });
+</script>
 """, unsafe_allow_html=True)
 
 # ------------------------------------
@@ -182,15 +212,34 @@ with st.sidebar:
     st.markdown("### 🏛️ France Travail")
     st.markdown("---")
     
-    # Indicateur de thème
+    # Bouton de basculement de thème
     st.markdown("### 🌓 Mode d'affichage")
-    st.markdown("""
-    L'application s'adapte automatiquement à votre préférence système :
-    - **Mode clair** : Interface claire et lumineuse
-    - **Mode sombre** : Interface sombre pour réduire la fatigue oculaire
     
-    *Changez votre préférence dans les paramètres de votre système.*
-    """)
+    # Initialiser le thème dans session_state
+    if 'theme' not in st.session_state:
+        st.session_state.theme = 'light'
+    
+    # Boutons de basculement
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("☀️ Clair", key="light_btn", help="Mode clair"):
+            st.session_state.theme = 'light'
+    with col2:
+        if st.button("🌙 Sombre", key="dark_btn", help="Mode sombre"):
+            st.session_state.theme = 'dark'
+    
+    # Afficher le thème actuel
+    current_theme = "☀️ Mode clair" if st.session_state.theme == 'light' else "🌙 Mode sombre"
+    st.markdown(f"**Thème actuel :** {current_theme}")
+    
+    # Appliquer le thème via JavaScript
+    st.markdown(f"""
+    <script>
+        // Appliquer le thème sélectionné
+        document.body.classList.remove('light-theme', 'dark-theme');
+        document.body.classList.add('{st.session_state.theme}-theme');
+    </script>
+    """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("### 📞 Contacts utiles")
@@ -208,6 +257,32 @@ with st.sidebar:
     - Contrat de formation  
     - RIB et justificatifs  
     - Pièce d'identité
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 🔒 Sécurisation de la Formation")
+    st.markdown("""
+    **Étapes recommandées :**
+    
+    1️⃣ **Définir le projet de formation**
+    - Identifier ses compétences
+    - Définir ses objectifs professionnels
+    
+    2️⃣ **Réaliser l'enquête métier**
+    - Analyser le marché de l'emploi
+    - Identifier les débouchés
+    
+    3️⃣ **Faire une immersion**
+    - Découvrir le métier en pratique
+    - Valider son choix
+    
+    4️⃣ **Préparer un CV**
+    - Mettre en valeur ses compétences
+    - Adapter au secteur visé
+    
+    5️⃣ **Préparer une lettre de motivation**
+    - Expliquer son projet
+    - Montrer sa motivation
     """)
 
 # ------------------------------------
