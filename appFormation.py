@@ -13,11 +13,11 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.francetravail.fr',
         'Report a bug': "https://github.com/AdeolaRo/orientation-professionnelle/issues",
-        'About': "Simulateur d'aides à la formation - Version 3.1"
+        'About': "Simulateur d'aides à la formation - Version 3.2"
     }
 )
 
-APP_VERSION = "3.1.0"
+APP_VERSION = "3.2.0"
 LAST_UPDATE = "2025-10-24"
 
 # ------------------------------------
@@ -237,16 +237,134 @@ with tabs[0]:
         submitted = st.form_submit_button("🔍 Lancer la simulation")
 
     if submitted:
-        st.balloons()
+        # Popup de résultats
+        st.markdown("""
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        " id="result-popup">
+            <div style="
+                background: white;
+                padding: 2rem;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                max-width: 600px;
+                width: 90%;
+                text-align: center;
+                animation: popupSlide 0.5s ease-out;
+            ">
+                <h2 style="color: #1f4e79; margin-bottom: 1rem;">🎯 Résultat de votre simulation</h2>
+                <div id="popup-content"></div>
+                <button onclick="closePopup()" style="
+                    background: linear-gradient(90deg, #1f4e79, #2e7d32);
+                    color: white;
+                    border: none;
+                    padding: 0.8rem 2rem;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    margin-top: 1.5rem;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    ✅ Fermer et voir les détails
+                </button>
+            </div>
+        </div>
+        
+        <style>
+            @keyframes popupSlide {
+                from {
+                    opacity: 0;
+                    transform: scale(0.8) translateY(-50px);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1) translateY(0);
+                }
+            }
+            
+            .popup-result {
+                padding: 1rem;
+                border-radius: 10px;
+                margin: 1rem 0;
+                text-align: left;
+            }
+            
+            .popup-success {
+                background: rgba(76, 175, 80, 0.1);
+                border-left: 6px solid #4caf50;
+                color: #2e7d32;
+            }
+            
+            .popup-info {
+                background: rgba(33, 150, 243, 0.1);
+                border-left: 6px solid #2196f3;
+                color: #1976d2;
+            }
+            
+            .popup-warning {
+                background: rgba(255, 152, 0, 0.1);
+                border-left: 6px solid #ff9800;
+                color: #f57c00;
+            }
+        </style>
+        
+        <script>
+            function closePopup() {
+                document.getElementById('result-popup').style.display = 'none';
+            }
+            
+            // Fermer avec Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePopup();
+                }
+            });
+            
+            // Fermer en cliquant à l'extérieur
+            document.getElementById('result-popup').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePopup();
+                }
+            });
+        </script>
+        """, unsafe_allow_html=True)
+        
         st.markdown("### 📋 Résultat de votre simulation")
 
         def box(type_, message, details=""):
             color = {"success":"success-box","info":"info-box","warning":"warning-box"}[type_]
+            popup_class = {"success":"popup-success","info":"popup-info","warning":"popup-warning"}[type_]
+            
+            # Affichage normal
             st.markdown(f"""
             <div class="{color}">
                 <h4>{message}</h4>
                 <p>{details}</p>
             </div>
+            """, unsafe_allow_html=True)
+            
+            # Contenu pour la popup
+            popup_content = f"""
+            <div class="popup-result {popup_class}">
+                <h3>{message}</h3>
+                <p>{details}</p>
+            </div>
+            """
+            
+            # Injecter le contenu dans la popup
+            st.markdown(f"""
+            <script>
+                document.getElementById('popup-content').innerHTML = `{popup_content}`;
+            </script>
             """, unsafe_allow_html=True)
 
         if are == "Oui":
