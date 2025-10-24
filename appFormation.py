@@ -2,131 +2,202 @@ import streamlit as st
 import sys
 from datetime import datetime
 
-# -----------------------------
+# ------------------------------------
 # CONFIGURATION DE LA PAGE
-# -----------------------------
+# ------------------------------------
 st.set_page_config(
     page_title="Simulation Rémunération Formation",
     page_icon="🎓",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://www.francetravail.fr',
         'Report a bug': "https://github.com/AdeolaRo/orientation-professionnelle/issues",
-        'About': "Simulateur d'aides à la formation - Version 2.0"
+        'About': "Simulateur d'aides à la formation - Version 3.1"
     }
 )
 
-# -----------------------------
-# MÉTADONNÉES DE L'APPLICATION
-# -----------------------------
-APP_VERSION = "2.0.0"
+APP_VERSION = "3.1.0"
 LAST_UPDATE = "2025-10-24"
 
-# -----------------------------
-# STYLES CSS PERSONNALISÉS
-# -----------------------------
+# ------------------------------------
+# STYLES CSS AVEC MODE SOMBRE/CLAIR
+# ------------------------------------
 st.markdown("""
 <style>
-    /* HEADER PRINCIPAL */
+    /* Variables CSS pour les thèmes */
+    :root {
+        --primary-color: #1f4e79;
+        --secondary-color: #2e7d32;
+        --success-color: #4caf50;
+        --info-color: #2196f3;
+        --warning-color: #ff9800;
+        --text-color: #262730;
+        --bg-color: #ffffff;
+        --card-bg: #f8f9fa;
+        --border-color: #e0e0e0;
+    }
+    
+    /* Mode sombre */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --text-color: #f0f0f0;
+            --bg-color: #0e1117;
+            --card-bg: #262730;
+            --border-color: #3a3a3a;
+        }
+    }
+    
+    /* Header principal */
     .main-header {
-        background: linear-gradient(135deg, #1f4e79, #2e7d32);
-        padding: 1.8rem;
-        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        padding: 1.5rem;
+        border-radius: 10px;
         color: white;
         text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         margin-bottom: 2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        transition: 0.3s ease;
+        transition: all 0.3s ease;
     }
-    .main-header:hover {
-        transform: scale(1.01);
-    }
-    .main-header h1 {
-        font-size: 2rem;
-        margin-bottom: 0.3rem;
-    }
-
-    /* BOÎTES D'INFORMATION */
+    
+    /* Boîtes d'information adaptatives */
     .info-box, .success-box, .warning-box {
         padding: 1rem;
         border-radius: 10px;
         margin: 1rem 0;
-        font-size: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
     }
-    .info-box {
-        background-color: #e3f2fd;
-        border-left: 5px solid #2196f3;
+    
+    .info-box { 
+        background: rgba(33, 150, 243, 0.1); 
+        border-left: 6px solid var(--info-color);
+        color: var(--text-color);
     }
-    .success-box {
-        background-color: #e8f5e8;
-        border-left: 5px solid #4caf50;
+    
+    .success-box { 
+        background: rgba(76, 175, 80, 0.1); 
+        border-left: 6px solid var(--success-color);
+        color: var(--text-color);
     }
-    .warning-box {
-        background-color: #fff3e0;
-        border-left: 5px solid #ff9800;
+    
+    .warning-box { 
+        background: rgba(255, 152, 0, 0.1); 
+        border-left: 6px solid var(--warning-color);
+        color: var(--text-color);
     }
-
-    /* BOUTON PRINCIPAL */
+    
+    /* Boutons adaptatifs */
     div.stButton > button:first-child {
-        background: linear-gradient(90deg, #1976d2, #43a047);
-        color: white;
-        font-weight: 600;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        color: white; 
         border: none;
-        padding: 0.8rem 2rem;
+        padding: 0.7rem 2rem; 
         border-radius: 8px;
+        font-weight: 600; 
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    div.stButton > button:hover {
+        background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+        transform: scale(1.03);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Onglets adaptatifs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border-radius: 8px 8px 0 0;
         transition: all 0.3s ease;
     }
-    div.stButton > button:hover {
-        background: linear-gradient(90deg, #43a047, #1976d2);
-        transform: scale(1.02);
+    
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-color);
+        color: white;
     }
-
-    /* EXPANDER STYLE */
+    
+    /* Sidebar adaptative */
+    .css-1d391kg {
+        background-color: var(--card-bg);
+    }
+    
+    /* Formulaires adaptatifs */
+    .stSelectbox > div > div {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+    
+    .stRadio > div {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+    }
+    
+    /* Expander adaptatif */
     .streamlit-expanderHeader {
-        font-weight: 600 !important;
-        color: #1f4e79 !important;
+        background-color: var(--card-bg);
+        color: var(--text-color);
     }
-
-    /* RÉPONSIVE */
-    @media (max-width: 768px) {
-        .main-header h1 { font-size: 1.6rem; }
-        .main-header h3 { font-size: 1.1rem; }
+    
+    /* Animation de transition globale */
+    * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+    
+    /* Indicateur de thème */
+    .theme-indicator {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: var(--primary-color);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        z-index: 1000;
+        opacity: 0.7;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
+# ------------------------------------
 # EN-TÊTE
-# -----------------------------
+# ------------------------------------
 st.markdown("""
 <div class="main-header">
-    <h1>🎓 Simulation d’Aides à la Formation & Financement </h1>
-    <h3>France Travail & Région</h3>
+    <h1>🎓 Simulation & Informations – Aides à la Formation</h1>
+    <h3>France Travail • Régions • Dispositif SFER</h3>
 </div>
 """, unsafe_allow_html=True)
 
-# -----------------------------
-# INTRODUCTION
-# -----------------------------
-st.markdown("""
-<div class="info-box">
-    <h4>👋 Bienvenue !</h4>
-    <p>Répondez à quelques questions, puis cliquez sur <b>"🔍 Lancer la simulation"</b> pour découvrir vos <strong>droits à la rémunération</strong> pendant la formation (AREF, RFFT, RFF, etc.).</p>
-</div>
-""", unsafe_allow_html=True)
-
-# -----------------------------
+# ------------------------------------
 # BARRE LATÉRALE
-# -----------------------------
+# ------------------------------------
 with st.sidebar:
     st.markdown("### 🏛️ France Travail")
+    st.markdown("---")
+    
+    # Indicateur de thème
+    st.markdown("### 🌓 Mode d'affichage")
+    st.markdown("""
+    L'application s'adapte automatiquement à votre préférence système :
+    - **Mode clair** : Interface claire et lumineuse
+    - **Mode sombre** : Interface sombre pour réduire la fatigue oculaire
+    
+    *Changez votre préférence dans les paramètres de votre système.*
+    """)
+    
     st.markdown("---")
     st.markdown("### 📞 Contacts utiles")
     st.markdown("""
     **France Travail**  
     📞 3949 (appel non surtaxé)  
-    🌐 [francetravail.fr](https://www.francetravail.fr)
+    🌐 [france-travail.fr](https://www.france-travail.fr)
     
     **Conseil Régional**  
     🔍 Consultez le site web de votre région pour les dispositifs régionaux.
@@ -135,157 +206,172 @@ with st.sidebar:
     st.markdown("""
     - Attestation France Travail  
     - Contrat de formation  
-    - RIB  
-    - Justificatif de ressources  
+    - RIB et justificatifs  
     - Pièce d'identité
     """)
 
-# -----------------------------
-# QUESTIONS UTILISATEUR
-# -----------------------------
-st.markdown("## 🧾 Votre situation")
+# ------------------------------------
+# ONGLET PRINCIPAL
+# ------------------------------------
+tabs = st.tabs([
+    "🎯 Simulation de rémunération",
+    "📘 Formations (France Travail & Région)",
+    "💶 Rémunérations pendant / après formation",
+    "🌍 Dispositif SFER (Hauts-de-France)"
+])
 
-with st.form("simulation_form"):
-    are = st.radio("Percevez-vous actuellement l’ARE (Allocation chômage) ?", ["Oui", "Non"])
-    formation_type = st.selectbox(
-        "Type de formation envisagée :",
-        ["Formation France Travail", "Formation Région (ex : SFER)"]
-    )
-    formation_duree = st.radio(
-        "Durée de la formation :",
-        ["> 40 heures", "≤ 40 heures"]
-    )
-    droits_fin = st.radio(
-        "Vos droits ARE couvrent-ils toute la durée de la formation ?",
-        ["Oui", "Non", "Je ne sais pas"]
-    )
-    st.markdown("---")
-    submitted = st.form_submit_button("🔍 Lancer la simulation")
+# ====================================
+# ONGLET 1 : SIMULATEUR
+# ====================================
+with tabs[0]:
+    st.markdown("## 🧭 Simulation personnalisée")
 
-# -----------------------------
-# AFFICHAGE DES RÉSULTATS APRÈS CLIC
-# -----------------------------
-if submitted:
-    st.balloons()
-    st.markdown("## 📋 Résultat de votre simulation")
+    with st.form("simulation_form"):
+        are = st.radio("Percevez-vous actuellement l’ARE (Allocation chômage) ?", ["Oui", "Non"])
+        formation_type = st.selectbox(
+            "Type de formation envisagée :",
+            ["Formation France Travail", "Formation Région (ex : SFER)"]
+        )
+        formation_duree = st.radio("Durée de la formation :", ["> 40 heures", "≤ 40 heures"])
+        droits_fin = st.radio("Vos droits ARE couvrent-ils toute la durée de la formation ?", ["Oui", "Non", "Je ne sais pas"])
+        submitted = st.form_submit_button("🔍 Lancer la simulation")
 
-    with st.expander("📝 Résumé de vos réponses", expanded=True):
-        st.markdown(f"""
-        - **ARE actuelle** : {are}  
-        - **Type de formation** : {formation_type}  
-        - **Durée** : {formation_duree}  
-        - **Droits ARE** : {droits_fin}
+    if submitted:
+        st.balloons()
+        st.markdown("### 📋 Résultat de votre simulation")
+
+        def box(type_, message, details=""):
+            color = {"success":"success-box","info":"info-box","warning":"warning-box"}[type_]
+            st.markdown(f"""
+            <div class="{color}">
+                <h4>{message}</h4>
+                <p>{details}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if are == "Oui":
+            if formation_duree == "> 40 heures":
+                box("success", "✅ Vous pouvez bénéficier de l’AREF", 
+                    "L'AREF (Allocation d’aide au retour à l’emploi - Formation) est versée pendant la formation, sous conditions d’assiduité.")
+                if droits_fin == "Non":
+                    box("info", "ℹ️ Vos droits ARE ne couvrent pas toute la formation", 
+                        "Vous pouvez demander la RFF (Rémunération de Fin de Formation) pour la période restante.")
+                elif droits_fin == "Je ne sais pas":
+                    box("warning", "❓ Vérification nécessaire", 
+                        "Contactez votre conseiller France Travail pour connaître la durée exacte de vos droits.")
+            else:
+                box("warning", "⚠️ Formation courte", "Les formations de moins de 40h ne donnent généralement pas droit à l’AREF.")
+        else:
+            if formation_type == "Formation France Travail":
+                box("success", "✅ Vous pouvez demander la RFFT", 
+                    "Rémunération de Formation France Travail, pour les non-indemnisés suivant une formation agréée.")
+            elif formation_type == "Formation Région (ex : SFER)":
+                box("info", "ℹ️ Formation régionale", 
+                    "Vérifiez auprès de votre **Conseil Régional** : une rémunération régionale (stagiaire de la formation professionnelle) peut être disponible.")
+            else:
+                box("warning", "⚠️ Financement requis", "Une validation par France Travail ou la Région est obligatoire pour obtenir une rémunération.")
+
+        st.markdown("""
+        ---
+        ### ✅ Prochaines étapes :
+        - 💬 Contactez votre conseiller France Travail  
+        - 📝 Déposez votre dossier de rémunération (AREF, RFF, RFFT, etc.)  
+        - 🔁 Actualisez mensuellement votre situation (“en formation”)  
         """)
 
-    # Fonction d'affichage stylé
-    def display_result(result_type, message, details=None):
-        color_class = {
-            "success": "success-box",
-            "info": "info-box",
-            "warning": "warning-box"
-        }.get(result_type, "info-box")
+# ====================================
+# ONGLET 2 : FORMATIONS
+# ====================================
+with tabs[1]:
+    st.markdown("## 🎓 Formations (France Travail & Région)")
 
-        st.markdown(f"""
-        <div class="{color_class}">
-            <h4>{message}</h4>
-            {f'<p>{details}</p>' if details else ''}
-        </div>
-        """, unsafe_allow_html=True)
-
-    # LOGIQUE PRINCIPALE
-    if are == "Oui":
-        if formation_duree == "> 40 heures":
-            display_result(
-                "success",
-                "✅ Vous pouvez bénéficier de l'AREF (Allocation d'aide au retour à l'emploi - Formation)",
-                "L'AREF est versée pendant toute la durée de votre formation, sous réserve d'assiduité et de validation de votre projet par France Travail."
-            )
-
-            if droits_fin == "Non":
-                display_result(
-                    "info",
-                    "ℹ️ Vos droits ARE ne couvrent pas toute la formation",
-                    "Vous pouvez demander la **RFF** (Rémunération de Fin de Formation) pour la période non couverte."
-                )
-            elif droits_fin == "Je ne sais pas":
-                display_result(
-                    "warning",
-                    "❓ Vérification nécessaire",
-                    "Contactez votre conseiller France Travail pour confirmer la durée exacte de vos droits."
-                )
-        else:
-            display_result(
-                "warning",
-                "⚠️ Formation courte",
-                "Les formations de moins de 40 heures ne donnent généralement pas droit à l’AREF. Renseignez-vous sur les aides régionales."
-            )
-    else:
-        if formation_type == "Formation France Travail":
-            display_result(
-                "success",
-                "✅ Vous pouvez demander la RFFT (Rémunération de Formation France Travail)",
-                "Elle s’adresse aux demandeurs d’emploi non indemnisés suivant une formation validée par France Travail."
-            )
-        elif formation_type == "Formation Région (ex : SFER)":
-            display_result(
-                "info",
-                "ℹ️ Formation régionale",
-                "Vérifiez auprès de votre **Conseil Régional** : certaines régions proposent une rémunération spécifique (SFER)."
-            )
-        else:
-            display_result(
-                "warning",
-                "⚠️ Financement requis",
-                "Un financement validé par France Travail ou la Région est nécessaire pour percevoir une rémunération."
-            )
-
-    st.markdown("---")
-
-    # Étapes suivantes
-    st.markdown("### ✅ Prochaines étapes")
     st.markdown("""
-    - 💬 **Contactez votre conseiller France Travail** pour confirmer vos droits.  
-    - 📝 **Faites la demande de rémunération** (AREF, RFF, RFFT, ou aide régionale).  
-    - 🔁 **Actualisez chaque mois** votre situation (en indiquant "en formation").  
+    ### 🧍‍♂️ À qui s’adressent-elles ?
+    - En tant que demandeur d’emploi, vous pouvez suivre une formation agréée par France Travail.  
+    - Les formations peuvent être financées ou co-financées par la **Région** ou l’**État**.  
+    - Elles s’inscrivent dans votre **Projet Personnel d’Accès à l’Emploi (PPAE)**.  
+
+    ### 🏗️ Typologie et conditions
+    - Formation financée par le **programme régional de formation (PRF)** : inscription via “financée par le Conseil régional”.  
+    - Le centre de formation valide vos prérequis, puis votre conseiller France Travail valide le projet.  
+    - Une formation doit durer **au moins 40 heures** pour certaines rémunérations.  
+
+    ### 🎯 Objectifs
+    - Acquérir de nouvelles compétences, se reconvertir ou renforcer son employabilité.  
+    - Souvent orientées vers des **métiers en tension** (via la Région ou France Travail).  
     """)
 
-# -----------------------------
-# SECTION D'AIDE
-# -----------------------------
-with st.expander("📚 Aide et définitions des acronymes"):
+# ====================================
+# ONGLET 3 : RÉMUNÉRATIONS
+# ====================================
+with tabs[2]:
+    st.markdown("## 💶 Rémunérations pendant ou après formation")
+
     st.markdown("""
-    ### 🎯 **AREF** - Allocation d'aide au retour à l'emploi - Formation
-    - **Qui** : Demandeurs d'emploi indemnisés par l'ARE
-    - **Quand** : Formation de plus de 40 heures prescrite par France Travail
-    - **Montant** : Équivalent à l'ARE, versé pendant toute la formation
-    - **Conditions** : Respecter les obligations (assiduité, recherche d'emploi...)
-    
-    ### 💰 **RFF** - Rémunération de Fin de Formation
-    - **Qui** : Demandeurs d'emploi dont les droits ARE s'épuisent pendant la formation
-    - **Quand** : Période non couverte par l'ARE
-    - **Montant** : Équivalent à l'ARE
-    - **Durée** : Jusqu'à la fin de la formation
-    
-    ### 🏢 **RFFT** - Rémunération de Formation France Travail
-    - **Qui** : Demandeurs d'emploi non indemnisés
-    - **Quand** : Formation prescrite par France Travail
-    - **Montant** : Variable selon la situation (environ 600€/mois)
-    - **Conditions** : Formation de plus de 120 heures
-    
-    ### 🌍 **Rémunération Régionale**
-    - **Qui** : Demandeurs d'emploi suivant une formation régionale
-    - **Quand** : Formation financée par la Région (ex: SFER)
-    - **Montant** : Variable selon la région
-    - **Conditions** : Vérifier auprès de votre Conseil Régional
+    ### Principaux dispositifs :
+    - **RFF (Rémunération de Fin de Formation)** : si vos droits ARE/ASP ne couvrent pas toute la durée de la formation.  
+    - **RFFT (Rémunération de Formation France Travail)** : pour les non-indemnisés.  
+    - **RSFP (Rémunération des Stagiaires de la Formation Professionnelle)** : via la Région ou l’État.  
+    - Autres : ARE-F, ASP-F, ATI-F selon situation.
+
+    ### 💰 Montants indicatifs :
+    - **RFFT** : de 224,68 € à 769,49 € / mois (jusqu’à 2 170 € pour travailleurs handicapés).  
+    - **RFF / R2F** : plafonnée à 652,02 € / mois selon le décret.  
+    - **RSFP (Région)** : barème indicatif France Travail  
+        - <18 ans : 220,92 €/mois  
+        - 18–25 ans : 561,68 €/mois  
+        - 26 ans et + : 769,49 €/mois
+
+    ### ⏳ Durée :
+    - Les formations doivent durer **≥ 40h**.  
+    - RFFT et RFF versées **jusqu’à 3 ans max** pour une même formation.  
+
+    ### 🚗 Autres aides :
+    - Aides à la mobilité, hébergement, repas selon situation.  
+    - Le versement débute après l’attestation d’entrée en formation.
     """)
 
-# -----------------------------
-# FOOTER
-# -----------------------------
+# ====================================
+# ONGLET 4 : DISPOSITIF SFER
+# ====================================
+with tabs[3]:
+    st.markdown("## 🌍 Dispositif SFER – Se Former pour un Emploi en Région (Hauts-de-France)")
+
+    st.markdown("""
+    ### 🎯 Objectif
+    Le **SFER** remplace le **Programme Régional de Formation (PRF)**.  
+    Il permet aux demandeurs d’emploi d’accéder à des **formations financées à 100% par la Région**.
+
+    ### 👥 Publics concernés
+    - Demandeurs d’emploi majeurs inscrits à France Travail.  
+    - Salariés en contrat aidé ou à temps partiel (<24h/semaine).  
+    - Personnes en reconversion selon les cas.
+
+    ### 🧭 Parcours proposés
+    - **Découverte** : définir ou confirmer un projet professionnel.  
+    - **Qualifiant** : formation certifiante orientée métier.  
+    - **Perfectionnement** : modules courts pour renforcer les compétences.  
+    - **Filières d’avenir** : secteurs stratégiques (industrie, électromobilité, bâtiment durable…).
+
+    ### 💶 Financement & rémunération
+    - Financement intégral par la **Région Hauts-de-France**.  
+    - Gratuit pour le demandeur d’emploi.  
+    - Les indemnisés continuent à percevoir leur **ARE** pendant la formation.  
+    - Les non-indemnisés peuvent percevoir une **indemnisation ASP**, selon critères.  
+
+    ### 📝 Démarches & conseils
+    - Être inscrit à France Travail.  
+    - Avoir un projet professionnel validé.  
+    - Vérifier que la formation est **labellisée SFER** et financée par la Région.  
+    - Respecter l’assiduité et déclarer sa situation chaque mois.
+    """)
+
+# ------------------------------------
+# PIED DE PAGE
+# ------------------------------------
 st.markdown("---")
 st.caption(f"""
-🛈 Application simplifiée à but informatif – Version {APP_VERSION}  
+🛈 Application informative & interactive – Version {APP_VERSION}  
 📅 Dernière mise à jour : {LAST_UPDATE}  
-Les règles peuvent varier selon votre région ou votre situation personnelle.  
-Sources : dispositifs France Travail & Régions.
+Sources : France Travail, Service Public, Ministère du Travail, C2RP, Centre Inffo, CMA Hauts-de-France.
 """)
