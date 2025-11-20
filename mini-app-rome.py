@@ -9,7 +9,7 @@ from datetime import date
 # ---------------------
 st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="🎯", layout="wide")
 st.title("🎯 Questionnaire d'Orientation Professionnelle")
-st.markdown("**Basé sur les données ROME officielles – Analyse enrichie (NLP)**")
+st.markdown("**Basé sur les données ROME officielles – Analyse enrichie par IA (NLP)**")
 
 LAST_UPDATE = date.today().strftime("%d-%m-%Y")
 
@@ -127,7 +127,7 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
     return df.sort_values(by="score", ascending=False).head(5), families_nlp, keywords_nlp
 
 # ---------------------
-# FONCTION PDF SÉCURISÉE UTF-8
+# FONCTION PDF SÉCURISÉE UTF-8 + largeur dynamique
 # ---------------------
 def safe_text(txt):
     if txt is None:
@@ -142,6 +142,8 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
     pdf.cell(0, 10, safe_text("Plan d'action professionnel"), ln=True)
     pdf.set_font("Helvetica", "", 12)
 
+    usable_width = pdf.w - 2 * pdf.l_margin
+
     def section(title):
         pdf.ln(5)
         pdf.set_font("Helvetica", "B", 13)
@@ -149,24 +151,24 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
         pdf.set_font("Helvetica", "", 11)
 
     section("👤 Profil")
-    pdf.multi_cell(0, 7, safe_text(f"Nom : {nom}"))
-    pdf.multi_cell(0, 7, safe_text(f"Objectifs : {objectifs}"))
-    pdf.multi_cell(0, 7, safe_text(f"Compétences techniques : {', '.join(compet_tech)}"))
-    pdf.multi_cell(0, 7, safe_text(f"Compétences transversales : {', '.join(soft_skills)}"))
-    pdf.multi_cell(0, 7, safe_text(f"Mode de travail : {mode_travail}"))
-    pdf.multi_cell(0, 7, safe_text(f"Rythme : {rythme}"))
-    pdf.multi_cell(0, 7, safe_text(f"Secteur préféré : {secteur}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Nom : {nom}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Objectifs : {objectifs}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Compétences techniques : {', '.join(compet_tech)}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Compétences transversales : {', '.join(soft_skills)}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Mode de travail : {mode_travail}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Rythme : {rythme}"))
+    pdf.multi_cell(usable_width, 7, safe_text(f"Secteur préféré : {secteur}"))
 
     section("🧠 Analyse IA des objectifs")
     if keywords_nlp:
-        pdf.multi_cell(0, 7, safe_text(f"Mots-clés détectés : {', '.join(keywords_nlp)}"))
-        pdf.multi_cell(0, 7, safe_text(f"Familles ROME associées : {', '.join(families_nlp)}"))
+        pdf.multi_cell(usable_width, 7, safe_text(f"Mots-clés détectés : {', '.join(keywords_nlp)}"))
+        pdf.multi_cell(usable_width, 7, safe_text(f"Familles ROME associées : {', '.join(families_nlp)}"))
     else:
-        pdf.multi_cell(0, 7, "Aucun mot-clé détecté.")
+        pdf.multi_cell(usable_width, 7, "Aucun mot-clé détecté.")
 
     section("💼 Métiers recommandés")
     for _, row in suggestions.iterrows():
-        pdf.multi_cell(0, 7, safe_text(f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}"))
+        pdf.multi_cell(usable_width, 7, safe_text(f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}"))
 
     buffer = BytesIO()
     pdf.output(buffer)
