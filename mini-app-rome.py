@@ -3,6 +3,7 @@ import pandas as pd
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from io import BytesIO
+from datetime import date
 
 # Configuration de la page
 st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="🎯", layout="wide")
@@ -10,6 +11,8 @@ st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="�
 # Titre principal
 st.title("🎯 Questionnaire d'Orientation Professionnelle")
 st.markdown("**Basé sur les données ROME officielles** - Répertoire Opérationnel des Métiers et des Emplois")
+
+LAST_UPDATE = date.today().strftime("%d-%m-%Y")
 
 # Chargement des données
 @st.cache_data
@@ -183,6 +186,7 @@ st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; font-size: 12px;">
     🎯 Application d'orientation professionnelle basée sur les données ROME officielles<br>
-    Répertoire Opérationnel des Métiers et des Emplois - France Travail
+    st.write(f"Dernière mise à jour : {LAST_UPDATE}")<br>
+    ROME - France Travail
 </div>
 """, unsafe_allow_html=True)
