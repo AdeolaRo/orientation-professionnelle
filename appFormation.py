@@ -209,51 +209,21 @@ st.markdown("""
 # BARRE LATÉRALE
 # ------------------------------------
 with st.sidebar:
-    st.markdown("### 🏛️ France Travail")
+    st.markdown("### France Travail")
     st.markdown("---")
-    
-    # Bouton de basculement de thème
-    st.markdown("### 🌓 Mode d'affichage")
-    
-    # Initialiser le thème dans session_state
-    if 'theme' not in st.session_state:
-        st.session_state.theme = 'light'
-    
-    # Boutons de basculement
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("☀️ Clair", key="light_btn", help="Mode clair"):
-            st.session_state.theme = 'light'
-    with col2:
-        if st.button("🌙 Sombre", key="dark_btn", help="Mode sombre"):
-            st.session_state.theme = 'dark'
-    
-    # Afficher le thème actuel
-    current_theme = "☀️ Mode clair" if st.session_state.theme == 'light' else "🌙 Mode sombre"
-    st.markdown(f"**Thème actuel :** {current_theme}")
-    
-    # Appliquer le thème via JavaScript
-    st.markdown(f"""
-    <script>
-        // Appliquer le thème sélectionné
-        document.body.classList.remove('light-theme', 'dark-theme');
-        document.body.classList.add('{st.session_state.theme}-theme');
-    </script>
-    """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("### 📞 Contacts utiles")
     st.markdown("""
     **France Travail**  
     📞 3949 (appel non surtaxé)  
-    🌐 [france-travail.fr](https://www.france-travail.fr)
+    🌐 [francetravail.fr](https://www.francetravail.fr)
     
     **Conseil Régional**  
     🔍 Consultez le site web de votre région pour les dispositifs régionaux.
     """)
     st.markdown("### 📋 Documents utiles")
-    st.markdown("""
-    - Attestation France Travail  
+    st.markdown(""" 
     - Contrat de formation  
     - RIB et justificatifs  
     - Pièce d'identité
@@ -265,24 +235,25 @@ with st.sidebar:
     **Étapes recommandées :**
     
     1️⃣ **Définir le projet de formation**
-    - Identifier ses compétences
-    - Définir ses objectifs professionnels
+    - Identifier vos compétences
+    - Définir vos projet d'évolution professionnel
     
     2️⃣ **Réaliser l'enquête métier**
-    - Analyser le marché de l'emploi
+    - Analyser le marché de l'emploi pour le métier recherché
     - Identifier les débouchés
     
     3️⃣ **Faire une immersion**
     - Découvrir le métier en pratique
-    - Valider son choix
+        Grace à l'Immerssion facilité 
+        https://immersion-facile.beta.gouv.fr/accueil-beneficiaires
+    - Réaliser votre immersion pour valider votre choix
     
     4️⃣ **Préparer un CV**
-    - Mettre en valeur ses compétences
-    - Adapter au secteur visé
+    - Mettre en valeur vos compétences
+    - Adapter votre CV au secteur visé
     
     5️⃣ **Préparer une lettre de motivation**
-    - Expliquer son projet
-    - Montrer sa motivation
+     Expliquer son projet en montrant sa motivation
     """)
 
 # ------------------------------------
@@ -290,8 +261,11 @@ with st.sidebar:
 # ------------------------------------
 tabs = st.tabs([
     "🎯 Simulation de rémunération",
+    ""
     "📘 Formations (France Travail & Région)",
+    ""
     "💶 Rémunérations pendant / après formation",
+    ""
     "🌍 Dispositif SFER (Hauts-de-France)"
 ])
 
@@ -422,9 +396,12 @@ with tabs[0]:
         st.markdown("""
         ---
         ### ✅ Prochaines étapes :
-        - 💬 Contactez votre conseiller France Travail  
-        - 📝 Déposez votre dossier de rémunération (AREF, RFF, RFFT, etc.)  
+        - 💬 Contactez un Organisme de Formation agréé  
+        - 📝 Mobiliser votre CPF (en cas de somme insuffisante faire une demande d'abondement aif)
+             Sans le CPF demander un devis pour AIF qui sera transmis via ("KAIROS") 
         - 🔁 Actualisez mensuellement votre situation (“en formation”)  
+
+        AIF : Aide Individuel à la Formation.
         """)
 
 # ====================================
@@ -519,7 +496,7 @@ with tabs[3]:
 # ------------------------------------
 st.markdown("---")
 st.caption(f"""
-🛈 Application informative & interactive – Version {APP_VERSION}  
+🛈 Application informative - Formation & Rémunération  
 📅 Dernière mise à jour : {LAST_UPDATE}  
 Sources : France Travail, Service Public, Ministère du Travail, C2RP, Centre Inffo, CMA Hauts-de-France.
 """)
