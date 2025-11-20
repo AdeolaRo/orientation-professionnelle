@@ -1,192 +1,269 @@
 import streamlit as st
 import pandas as pd
 from fpdf import FPDF
-from fpdf.enums import XPos, YPos
 from io import BytesIO
 from datetime import date
 
-# Configuration de la page
+# ---------------------
+# CONFIG PAGE
+# ---------------------
 st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="🎯", layout="wide")
-
-# Titre principal
 st.title("🎯 Questionnaire d'Orientation Professionnelle")
-st.markdown("**Basé sur les données ROME officielles** - Répertoire Opérationnel des Métiers et des Emplois")
+st.markdown("**Basé sur les données ROME officielles – Analyse enrichie par IA (NLP)**")
 
 LAST_UPDATE = date.today().strftime("%d-%m-%Y")
 
-# Chargement des données
+
+# ---------------------
+# CHARGEMENT DONNÉES
+# ---------------------
 @st.cache_data
 def load_rome_data():
     try:
-        metiers_df = pd.read_csv('RefRomeCsv/unix_referentiel_code_rome_v460_utf8.csv')
-        competences_df = pd.read_csv('RefRomeCsv/unix_referentiel_competence_v460_utf8.csv')
-        centres_interet_df = pd.read_csv('RefRomeCsv/unix_centre_interet_v460_utf8.csv')
-        correspondances_df = pd.read_csv('RefRomeCsv/unix_lien_centre_metier.csv')  # ajout ici
-        return metiers_df, competences_df, centres_interet_df, correspondances_df
+        metiers = pd.read_csv("RefRomeCsv/unix_referentiel_code_rome_v460_utf8.csv")
+        competences = pd.read_csv("RefRomeCsv/unix_referentiel_competence_v460_utf8.csv")
+        centres = pd.read_csv("RefRomeCsv/unix_centre_interet_v460_utf8.csv")
+        correspondances = pd.read_csv("RefRomeCsv/unix_lien_centre_metier.csv")
+        return metiers, competences, centres, correspondances
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données ROME : {e}")
+        st.error(f"Erreur chargement ROME : {e}")
         return None, None, None, None
 
-# Fonction de matching améliorée
-def matcher_metiers(metiers_df, correspondances_df, centres_interet_selection, competences_tech, soft_skills, secteur):
-    codes_centre_selectionnes = [ci.split(" - ")[0] for ci in centres_interet_selection]
-    metiers_associes = correspondances_df[
-        correspondances_df["code_centre_interet"].isin(codes_centre_selectionnes)
-    ]["code_rome"].unique()
-    metiers_filtres = metiers_df[metiers_df["code_rome"].isin(metiers_associes)].copy()
 
-    if metiers_filtres.empty:
-        sample_df = metiers_df.sample(5).copy()
-        sample_df["score"] = 0
-        return sample_df
-
-    # Initialisation de la colonne score
-    metiers_filtres["score"] = 0
-
-    for i, row in metiers_filtres.iterrows():
-        score = 0
-        libelle = str(row["libelle_rome"]).lower()
-
-        for c in competences_tech:
-            if c.lower() in libelle:
-                score += 1
-
-        for s in soft_skills:
-            if s.lower() in libelle:
-                score += 0.5
-
-        if secteur.lower() in libelle:
-            score += 1
-
-        metiers_filtres.at[i, "score"] = score
-
-    return metiers_filtres.sort_values(by="score", ascending=False).head(5)
-
-# Chargement des données
 metiers_df, competences_df, centres_interet_df, correspondances_df = load_rome_data()
 
-if metiers_df is not None and correspondances_df is not None:
-    # Interface utilisateur
-    with st.form("profil_form"):
-        st.subheader("📋 Votre Profil")
+
+# ---------------------
+# SECTEURS → FAMILLES ROME
+# ---------------------
+SECTEURS_ROME = {
+    "Tous secteurs": [],
+    "Informatique / Numérique": ["M18", "I13"],
+    "Santé / Social": ["J15", "J14"],
+    "Commerce / Vente": ["D14", "D15"],
+    "Administration / Services": ["M16", "K21"],
+    "Transport / Logistique": ["N11", "N12"],
+    "Agriculture / Environnement": ["A11", "A12"],
+    "Artisanat / BTP": ["F11", "F12"]
+}
+
+
+# ---------------------
+# MODULE NLP — INTELLIGENCE MÉTIER
+# ---------------------
+
+INTENT_MAP = {
+    "infirmier": ["J15"], "soigner": ["J15"], "santé": ["J15", "J14"], "médical": ["J15"],
+    "aider": ["J15", "J14", "K21"],
+    "coder": ["M18"], "développer": ["M18"], "informatique": ["M18", "I13"], "numérique": ["M18"],
+    "réparer": ["I13", "H22"], "installer": ["H22"],
+    "construire": ["F11", "F12"], "chantier": ["F12"],
+    "vendre": ["D14", "D15"], "commerce": ["D14", "D15"],
+    "conduire": ["N11", "N12"], "livrer": ["N12"],
+    "nature": ["A11", "A12"], "agriculture": ["A11"],
+    "bureau": ["M16"], "administration": ["M16"],
+    "manager": ["M17"], "diriger": ["M17"], "gérer": ["M17"]
+}
+
+def analyse_objectifs_nlp(objectifs):
+    """Analyse NLP simple mais efficace (détection mots clés + familles ROME associées)."""
+    if not objectifs:
+        return [], []
+
+    text = objectifs.lower()
+    families_detected = []
+    keywords = []
+
+    for word, families in INTENT_MAP.items():
+        if word in text:
+            keywords.append(word)
+            families_detected.extend(families)
+
+    families_detected = list(set(families_detected))
+
+    return families_detected, keywords
+
+
+# ---------------------
+# MATCHER MÉTIERS
+# ---------------------
+def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
+
+    df = metiers_df.copy()
+    df["score"] = 0
+
+    # 1. Centres d'intérêt
+    if centres_user:
+        centres_codes = [c.split(" - ")[0] for c in centres_user]
+        metiers_ci = correspondances_df[
+            correspondances_df["code_centre_interet"].isin(centres_codes)
+        ]["code_rome"].unique()
+        df.loc[df["code_rome"].isin(metiers_ci), "score"] += 3
+
+    # 2. Compétences techniques (simple)
+    for comp in compet_tech:
+        df.loc[df["libelle_rome"].str.contains(comp.split(" / ")[0], case=False), "score"] += 1
+
+    # 3. Soft skills
+    for skill in soft_skills:
+        df.loc[df["libelle_rome"].str.contains(skill.split(" ")[0], case=False), "score"] += 0.5
+
+    # 4. Secteur
+    familles_rome = SECTEURS_ROME.get(secteur, [])
+    if familles_rome:
+        df.loc[df["code_rome"].str[:3].isin(familles_rome), "score"] += 2
+
+    # 5. Matching compétences ROME réelles
+    for _, row in competences_df.iterrows():
+        rome = row["code_rome"]
+        comp = str(row["libelle_competence"]).lower()
+
+        for user_comp in compet_tech:
+            if user_comp.split(" / ")[0].lower() in comp:
+                df.loc[df["code_rome"] == rome, "score"] += 1
+
+    # 6. 🎯 NLP sur objectifs professionnels
+    families_nlp, keywords_nlp = analyse_objectifs_nlp(objectifs)
+
+    if families_nlp:
+        df.loc[df["code_rome"].str[:3].isin(families_nlp), "score"] += 3
+        df.loc[df["code_rome"].str[:2].isin([f[:2] for f in families_nlp]), "score"] += 1.5
+
+    return df.sort_values(by="score", ascending=False).head(5), families_nlp, keywords_nlp
+
+
+# ---------------------
+# PDF GENERATOR
+# ---------------------
+def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme, secteur, suggestions, families_nlp, keywords_nlp):
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "Plan d'action professionnel", ln=True)
+
+    pdf.set_font("Helvetica", "", 12)
+
+    def section(title):
+        pdf.ln(5)
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 8, title, ln=True)
+        pdf.set_font("Helvetica", "", 11)
+
+    # Profil
+    section("👤 Profil")
+    pdf.multi_cell(0, 7, f"Nom : {nom}")
+    pdf.multi_cell(0, 7, f"Objectifs : {objectifs}")
+
+    pdf.multi_cell(0, 7, f"Compétences techniques : {', '.join(compet_tech)}")
+    pdf.multi_cell(0, 7, f"Compétences transversales : {', '.join(soft_skills)}")
+    pdf.multi_cell(0, 7, f"Mode de travail : {mode_travail}")
+    pdf.multi_cell(0, 7, f"Rythme : {rythme}")
+    pdf.multi_cell(0, 7, f"Secteur préféré : {secteur}")
+
+    # Analyse NLP
+    section("🧠 Analyse IA des objectifs")
+    if keywords_nlp:
+        pdf.multi_cell(0, 7, f"Mots-clés détectés : {', '.join(keywords_nlp)}")
+        pdf.multi_cell(0, 7, f"Familles ROME associées : {', '.join(families_nlp)}")
+    else:
+        pdf.multi_cell(0, 7, "Aucun mot-clé détecté.")
+
+    # Métiers
+    section("💼 Métiers recommandés")
+    for _, row in suggestions.iterrows():
+        pdf.multi_cell(0, 7, f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}")
+
+    buffer = BytesIO()
+    pdf.output(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+# ---------------------
+# INTERFACE UTILISATEUR
+# ---------------------
+if metiers_df is not None:
+
+    with st.form("form_profil"):
         col1, col2 = st.columns(2)
 
         with col1:
-            nom = st.text_input("Votre nom ou pseudo")
+            nom = st.text_input("Nom ou pseudo")
+            centres_opts = [
+                f"{row['code_centre_interet']} - {row['libelle_centre_interet']}"
+                for _, row in centres_interet_df.iterrows()
+            ]
+            centres_user = st.multiselect("🎯 Centres d’intérêt", centres_opts)
 
-            st.subheader("🎯 Centres d'intérêt")
-            centres_interet_options = []
-            if centres_interet_df is not None:
-                for _, row in centres_interet_df.iterrows():
-                    centres_interet_options.append(f"{row['code_centre_interet']} - {row['libelle_centre_interet']}")
-            centres_interet_selection = st.multiselect("Quels centres d'intérêt vous correspondent le mieux ?",
-                                                       centres_interet_options[:10])
-
-            st.subheader("🛠️ Compétences techniques")
-            competences_tech = st.multiselect("Quelles compétences techniques possédez-vous ?", [
-                "Informatique / Numérique", "Machines / Outils", "Véhicules / Conduite",
-                "Bâtiment / Construction", "Cuisine / Restauration", "Soins / Santé",
-                "Commerce / Vente", "Administration / Gestion"
+            compet_tech = st.multiselect("🛠️ Compétences techniques", [
+                "Informatique / Programmation",
+                "Machines / Outils",
+                "Construction",
+                "Restauration",
+                "Soins",
+                "Gestion / Administration",
+                "Commerce",
             ])
 
         with col2:
-            st.subheader("💼 Préférences de travail")
-            mode_travail = st.radio("Mode de travail préféré :", ["Autonome", "En équipe", "Mixte"])
-            rythme = st.radio("Rythme de travail :", ["Calme et régulier", "Dynamique", "Variable"])
-            secteur = st.selectbox("Secteur d'activité préféré :", [
-                "Tous secteurs", "Agriculture / Environnement", "Artisanat / BTP", "Commerce / Vente",
-                "Santé / Social", "Transport / Logistique", "Informatique / Numérique", "Administration / Services"
+            mode_travail = st.radio("💼 Mode de travail préféré", ["Autonome", "En équipe", "Mixte"])
+            rythme = st.radio("⚡ Rythme", ["Calme", "Dynamique", "Variable"])
+            secteur = st.selectbox("🏢 Secteur d'activité préféré", list(SECTEURS_ROME.keys()))
+            soft_skills = st.multiselect("🌟 Soft skills", [
+                "Organisation", "Adaptation", "Communication", "Analyse",
+                "Résolution de problèmes", "Esprit d'équipe", "Rigueur",
+                "Leadership", "Créativité", "Patience"
             ])
-            formation = st.text_input("Formation ou diplôme (facultatif)")
 
-        st.subheader("🌟 Compétences transversales")
-        soft_skills = st.multiselect("Sélectionnez vos compétences transversales :", [
-            "Sens de l'organisation", "Capacité d'adaptation", "Communication", "Esprit d'analyse",
-            "Résolution de problèmes", "Esprit d'équipe", "Précision / Rigueur", "Leadership",
-            "Créativité", "Patience"
-        ])
+        objectifs = st.text_area("🎯 Vos objectifs professionnels")
 
-        st.subheader("🎯 Vos objectifs")
-        objectifs = st.text_area("Décrivez vos objectifs professionnels :",
-                                 placeholder="Ex: Trouver un emploi dans le secteur de la santé...")
-
-        submitted = st.form_submit_button("🔍 Analyser mon profil et obtenir des suggestions")
+        submitted = st.form_submit_button("🔍 Analyser mon profil")
 
     if submitted:
-        st.success("✅ Profil analysé ! Voici vos suggestions personnalisées :")
 
-        st.subheader("💼 Métiers suggérés")
-
-        suggestions_metiers = matcher_metiers(
-            metiers_df,
-            correspondances_df,
-            centres_interet_selection,
-            competences_tech,
-            soft_skills,
-            secteur
+        suggestions, fam_nlp, kw_nlp = matcher_metiers(
+            centres_user, compet_tech, soft_skills, secteur, objectifs
         )
 
-        for _, metier in suggestions_metiers.iterrows():
-            code_rome = metier["code_rome"]
-            libelle = metier["libelle_rome"]
-            url = f"https://candidat.francetravail.fr/metierscope/fiche-metier/{code_rome}"
-            score = metier.get("score", 0) 
+        st.success("Analyse terminée ✔")
 
-            with st.expander(f"**{libelle}** (ROME : {code_rome})"):
-                st.write(f"🔗 [Voir la fiche métier]({url})")
-                st.write(f"🧮 **Score de pertinence :** {score}/3")
-                st.write(f"🔍 **Description :** {metier.get('description_rome', 'Non disponible')}")
+        # Affichage NLP
+        st.subheader("🧠 Analyse IA de vos objectifs")
+        if kw_nlp:
+            st.markdown(f"**Mots-clés détectés :** {', '.join(kw_nlp)}")
+            st.markdown(f"**Familles ROME associées :** {', '.join(fam_nlp)}")
+        else:
+            st.info("Aucun mot-clé détecté dans vos objectifs.")
 
-        st.subheader("📋 Plan d'action personnalisé")
-        plan_html = f"""
-        <div style="background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <h3 style="color: #1f77b4; margin-top: 0;">📋 Plan d'action personnalisé</h3>
-            <p><strong>👤 Nom :</strong> {nom}</p>
-            <p><strong>🎯 Objectifs :</strong> {objectifs if objectifs else 'Non précisé'}</p>
-            <p><strong>🛠️ Compétences techniques :</strong> {', '.join(competences_tech) if competences_tech else 'Non spécifiées'}</p>
-            <p><strong>🌟 Compétences transversales :</strong> {', '.join(soft_skills) if soft_skills else 'Non spécifiées'}</p>
-            <p><strong>💼 Mode de travail préféré :</strong> {mode_travail}</p>
-            <p><strong>⚡ Rythme de travail :</strong> {rythme}</p>
-            <p><strong>🏢 Secteur d'activité :</strong> {secteur}</p>
-        </div>
-        """
-        st.markdown(plan_html, unsafe_allow_html=True)
+        # Métiers suggérés
+        st.subheader("💼 Métiers recommandés")
+        for _, row in suggestions.iterrows():
+            with st.expander(f"{row['libelle_rome']} (ROME {row['code_rome']})"):
+                st.write(f"Score : **{row['score']}**")
+                st.write(f"[Voir la fiche métier](https://candidat.francetravail.fr/metierscope/fiche-metier/{row['code_rome']})")
 
-        if st.button("📄 Télécharger le plan d'action (PDF)"):
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Helvetica", "B", 16)
-            pdf.cell(0, 10, "Plan d'action personnalisé - Orientation Professionnelle", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        # PDF
+        pdf_file = generate_pdf(
+            nom, objectifs, compet_tech, soft_skills,
+            mode_travail, rythme, secteur, suggestions,
+            fam_nlp, kw_nlp
+        )
 
-            pdf.set_font("Helvetica", "", 12)
-            pdf.cell(0, 10, f"Nom: {nom}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-            pdf.cell(0, 10, f"Objectifs: {objectifs if objectifs else 'Non précisé'}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-            pdf.cell(0, 10, f"Compétences techniques: {', '.join(competences_tech) if competences_tech else 'Non spécifiées'}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-            pdf.cell(0, 10, f"Compétences transversales: {', '.join(soft_skills) if soft_skills else 'Non spécifiées'}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        st.download_button(
+            "📄 Télécharger le PDF",
+            data=pdf_file,
+            file_name=f"Plan_Orientation_{nom.replace(' ','_')}.pdf",
+            mime="application/pdf"
+        )
 
-            pdf.ln(10)
-            pdf.set_font("Helvetica", "B", 14)
-            pdf.cell(0, 10, "Métiers suggérés :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-
-            pdf.set_font("Helvetica", "", 11)
-            for _, metier in suggestions_metiers.iterrows():
-                pdf.cell(0, 8, f"- {metier['libelle_rome']} (ROME {metier['code_rome']})", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-
-            buffer = BytesIO()
-            pdf.output(buffer)
-            buffer.seek(0)
-
-            st.download_button("📄 Télécharger le plan d'action (PDF)", buffer, file_name=f"Plan_Orientation_{nom.replace(' ', '_')}.pdf", mime="application/pdf")
-
-else:
-    st.error("❌ Impossible de charger les données ROME. Vérifiez que tous les fichiers CSV sont présents.")
-
-# Pied de page
+# FOOTER
 st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #666; font-size: 12px;">
-    🎯 Application d'orientation professionnelle basée sur les données ROME officielles<br>
-    st.write(f"Dernière mise à jour : {LAST_UPDATE}")<br>
-    ROME - France Travail
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    f"<div style='text-align:center;color:#666;font-size:12px;'>"
+    f"Application basée sur ROME – Mise à jour {LAST_UPDATE}"
+    "</div>",
+    unsafe_allow_html=True
+)
