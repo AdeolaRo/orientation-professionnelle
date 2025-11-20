@@ -32,6 +32,22 @@ def load_rome_data():
 
 metiers_df, competences_df, centres_interet_df, correspondances_df = load_rome_data()
 
+# ---------------------
+# FONCTION DE SECURITE COLONNES
+# ---------------------
+def get_code_rome_column(df, df_name="DataFrame"):
+    """
+    Vérifie le nom de colonne pour code_rome et retourne le nom correct ou None
+    """
+    if "code_rome" in df.columns:
+        return "code_rome"
+    elif "Code_Rome" in df.columns:
+        return "Code_Rome"
+    else:
+        st.error(f"❌ La colonne code_rome est introuvable dans {df_name}")
+        st.write(f"Colonnes disponibles : {df.columns.tolist()}")
+        return None
+
 
 # ---------------------
 # SECTEURS → FAMILLES ROME
@@ -47,11 +63,9 @@ SECTEURS_ROME = {
     "Artisanat / BTP": ["F11", "F12"]
 }
 
-
 # ---------------------
 # MODULE NLP — INTELLIGENCE MÉTIER
 # ---------------------
-
 INTENT_MAP = {
     "infirmier": ["J15"], "soigner": ["J15"], "santé": ["J15", "J14"], "médical": ["J15"],
     "aider": ["J15", "J14", "K21"],
@@ -66,41 +80,41 @@ INTENT_MAP = {
 }
 
 def analyse_objectifs_nlp(objectifs):
-    """Analyse NLP simple mais efficace (détection mots clés + familles ROME associées)."""
     if not objectifs:
         return [], []
-
     text = objectifs.lower()
     families_detected = []
     keywords = []
-
     for word, families in INTENT_MAP.items():
         if word in text:
             keywords.append(word)
             families_detected.extend(families)
-
-    families_detected = list(set(families_detected))
-
-    return families_detected, keywords
+    return list(set(families_detected)), keywords
 
 
 # ---------------------
-# MATCHER MÉTIERS
+# MATCHER MÉTIERS SÉCURISÉ
 # ---------------------
 def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
 
     df = metiers_df.copy()
     df["score"] = 0
 
+    # Récup colonne code_rome
+    metiers_code_col = get_code_rome_column(df, "metiers_df")
+    compet_code_col = get_code_rome_column(competences_df, "competences_df")
+    if not metiers_code_col or not compet_code_col:
+        return pd.DataFrame(), [], []
+
     # 1. Centres d'intérêt
     if centres_user:
         centres_codes = [c.split(" - ")[0] for c in centres_user]
         metiers_ci = correspondances_df[
             correspondances_df["code_centre_interet"].isin(centres_codes)
-        ]["code_rome"].unique()
-        df.loc[df["code_rome"].isin(metiers_ci), "score"] += 3
+        ][metiers_code_col].unique()
+        df.loc[df[metiers_code_col].isin(metiers_ci), "score"] += 3
 
-    # 2. Compétences techniques (simple)
+    # 2. Compétences techniques
     for comp in compet_tech:
         df.loc[df["libelle_rome"].str.contains(comp.split(" / ")[0], case=False), "score"] += 1
 
@@ -111,23 +125,21 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
     # 4. Secteur
     familles_rome = SECTEURS_ROME.get(secteur, [])
     if familles_rome:
-        df.loc[df["code_rome"].str[:3].isin(familles_rome), "score"] += 2
+        df.loc[df[metiers_code_col].str[:3].isin(familles_rome), "score"] += 2
 
-    # 5. Matching compétences ROME réelles
+    # 5. Matching compétences ROME
     for _, row in competences_df.iterrows():
-        rome = row["code_rome"]
+        rome = row[compet_code_col]
         comp = str(row["libelle_competence"]).lower()
-
         for user_comp in compet_tech:
             if user_comp.split(" / ")[0].lower() in comp:
-                df.loc[df["code_rome"] == rome, "score"] += 1
+                df.loc[df[metiers_code_col] == rome, "score"] += 1
 
-    # 6. 🎯 NLP sur objectifs professionnels
+    # 6. NLP objectifs
     families_nlp, keywords_nlp = analyse_objectifs_nlp(objectifs)
-
     if families_nlp:
-        df.loc[df["code_rome"].str[:3].isin(families_nlp), "score"] += 3
-        df.loc[df["code_rome"].str[:2].isin([f[:2] for f in families_nlp]), "score"] += 1.5
+        df.loc[df[metiers_code_col].str[:3].isin(families_nlp), "score"] += 3
+        df.loc[df[metiers_code_col].str[:2].isin([f[:2] for f in families_nlp]), "score"] += 1.5
 
     return df.sort_values(by="score", ascending=False).head(5), families_nlp, keywords_nlp
 
@@ -136,14 +148,11 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
 # PDF GENERATOR
 # ---------------------
 def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme, secteur, suggestions, families_nlp, keywords_nlp):
-
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-
     pdf.set_font("Helvetica", "B", 16)
     pdf.cell(0, 10, "Plan d'action professionnel", ln=True)
-
     pdf.set_font("Helvetica", "", 12)
 
     def section(title):
@@ -152,18 +161,15 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
         pdf.cell(0, 8, title, ln=True)
         pdf.set_font("Helvetica", "", 11)
 
-    # Profil
     section("👤 Profil")
     pdf.multi_cell(0, 7, f"Nom : {nom}")
     pdf.multi_cell(0, 7, f"Objectifs : {objectifs}")
-
     pdf.multi_cell(0, 7, f"Compétences techniques : {', '.join(compet_tech)}")
     pdf.multi_cell(0, 7, f"Compétences transversales : {', '.join(soft_skills)}")
     pdf.multi_cell(0, 7, f"Mode de travail : {mode_travail}")
     pdf.multi_cell(0, 7, f"Rythme : {rythme}")
     pdf.multi_cell(0, 7, f"Secteur préféré : {secteur}")
 
-    # Analyse NLP
     section("🧠 Analyse IA des objectifs")
     if keywords_nlp:
         pdf.multi_cell(0, 7, f"Mots-clés détectés : {', '.join(keywords_nlp)}")
@@ -171,7 +177,6 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
     else:
         pdf.multi_cell(0, 7, "Aucun mot-clé détecté.")
 
-    # Métiers
     section("💼 Métiers recommandés")
     for _, row in suggestions.iterrows():
         pdf.multi_cell(0, 7, f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}")
@@ -197,7 +202,6 @@ if metiers_df is not None:
                 for _, row in centres_interet_df.iterrows()
             ]
             centres_user = st.multiselect("🎯 Centres d’intérêt", centres_opts)
-
             compet_tech = st.multiselect("🛠️ Compétences techniques", [
                 "Informatique / Programmation",
                 "Machines / Outils",
@@ -230,7 +234,6 @@ if metiers_df is not None:
 
         st.success("Analyse terminée ✔")
 
-        # Affichage NLP
         st.subheader("🧠 Analyse IA de vos objectifs")
         if kw_nlp:
             st.markdown(f"**Mots-clés détectés :** {', '.join(kw_nlp)}")
@@ -238,14 +241,12 @@ if metiers_df is not None:
         else:
             st.info("Aucun mot-clé détecté dans vos objectifs.")
 
-        # Métiers suggérés
         st.subheader("💼 Métiers recommandés")
         for _, row in suggestions.iterrows():
             with st.expander(f"{row['libelle_rome']} (ROME {row['code_rome']})"):
                 st.write(f"Score : **{row['score']}**")
                 st.write(f"[Voir la fiche métier](https://candidat.francetravail.fr/metierscope/fiche-metier/{row['code_rome']})")
 
-        # PDF
         pdf_file = generate_pdf(
             nom, objectifs, compet_tech, soft_skills,
             mode_travail, rythme, secteur, suggestions,
