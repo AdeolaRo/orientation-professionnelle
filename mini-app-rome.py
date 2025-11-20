@@ -8,8 +8,8 @@ from datetime import date
 # CONFIGURATION PAGE
 # ---------------------
 st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="🎯", layout="wide")
-st.title("🎯 Questionnaire d'Orientation Professionnelle")
-st.markdown("**Basé sur les données ROME officielles – Analyse enrichie par IA (NLP)**")
+st.title("Questionnaire d'Orientation Professionnelle")
+st.markdown("**Basé sur les données ROME officielles – Analyse Poussée**")
 
 LAST_UPDATE = date.today().strftime("%d-%m-%Y")
 
@@ -31,7 +31,7 @@ def load_rome_data():
 metiers_df, competences_df, centres_interet_df, correspondances_df = load_rome_data()
 
 # ---------------------
-# SECURITE COLONNES
+# UTILITAIRES
 # ---------------------
 def get_code_rome_column(df, df_name="DataFrame"):
     if "code_rome" in df.columns:
@@ -58,35 +58,45 @@ SECTEURS_ROME = {
 }
 
 # ---------------------
-# MODULE NLP — INTELLIGENCE MÉTIER
+# ANALYSE POUSSEE 
 # ---------------------
 INTENT_MAP = {
     "infirmier": ["J15"], "soigner": ["J15"], "santé": ["J15", "J14"], "médical": ["J15"],
-    "aider": ["J15", "J14", "K21"],
+    "aider": ["J15", "J14", "K21"], "accompagner": ["J15", "J14", "K21"], "assistant": ["M16"],
     "coder": ["M18"], "développer": ["M18"], "informatique": ["M18", "I13"], "numérique": ["M18"],
-    "réparer": ["I13", "H22"], "installer": ["H22"],
-    "construire": ["F11", "F12"], "chantier": ["F12"],
-    "vendre": ["D14", "D15"], "commerce": ["D14", "D15"],
-    "conduire": ["N11", "N12"], "livrer": ["N12"],
-    "nature": ["A11", "A12"], "agriculture": ["A11"],
-    "bureau": ["M16"], "administration": ["M16"],
-    "manager": ["M17"], "diriger": ["M17"], "gérer": ["M17"]
+    "réparer": ["I13", "H22"], "installer": ["H22"], "construire": ["F11", "F12"],
+    "chantier": ["F12"], "vendre": ["D14", "D15"], "commerce": ["D14", "D15"],
+    "conduire": ["N11", "N12"], "livrer": ["N12"], "nature": ["A11", "A12"],
+    "agriculture": ["A11"], "bureau": ["M16"], "administration": ["M16"],
+    "manager": ["M17"], "diriger": ["M17"], "gérer": ["M17"], "formation": ["K21"],
+    "enseigner": ["K21"], "formation continue": ["K21"]
 }
 
 def analyse_objectifs_nlp(objectifs):
     if not objectifs:
         return [], []
     text = objectifs.lower()
-    families_detected = []
     keywords = []
-    for word, families in INTENT_MAP.items():
-        if word in text:
-            keywords.append(word)
-            families_detected.extend(families)
+    families_detected = []
+    
+    for mot, familles in INTENT_MAP.items():
+        if mot in text:
+            keywords.append(mot)
+            families_detected.extend(familles)
+    
+    # Approximation sur premiers caractères pour détecter variantes
+    mots_objectifs = text.split()
+    for mot_obj in mots_objectifs:
+        for mot, familles in INTENT_MAP.items():
+            if mot_obj.startswith(mot[:4]):
+                if mot not in keywords:
+                    keywords.append(mot)
+                    families_detected.extend(familles)
+
     return list(set(families_detected)), keywords
 
 # ---------------------
-# MATCHER MÉTIERS SÉCURISÉ
+# MATCHER MÉTIERS
 # ---------------------
 def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
 
@@ -97,7 +107,7 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
     if not metiers_code_col:
         return pd.DataFrame(), [], []
 
-    # 1. Centres d'intérêt
+    # Centres d'intérêt
     if centres_user:
         centres_codes = [c.split(" - ")[0] for c in centres_user]
         metiers_ci = correspondances_df[
@@ -105,20 +115,20 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
         ][metiers_code_col].unique()
         df.loc[df[metiers_code_col].isin(metiers_ci), "score"] += 3
 
-    # 2. Compétences techniques
+    # Compétences techniques
     for comp in compet_tech:
         df.loc[df["libelle_rome"].str.contains(comp.split(" / ")[0], case=False, na=False), "score"] += 1
 
-    # 3. Soft skills
+    # Soft skills
     for skill in soft_skills:
         df.loc[df["libelle_rome"].str.contains(skill.split(" ")[0], case=False, na=False), "score"] += 0.5
 
-    # 4. Secteur
+    # Secteur
     familles_rome = SECTEURS_ROME.get(secteur, [])
     if familles_rome:
         df.loc[df[metiers_code_col].str[:3].isin(familles_rome), "score"] += 2
 
-    # 5. NLP objectifs
+    # Objectifs
     families_nlp, keywords_nlp = analyse_objectifs_nlp(objectifs)
     if families_nlp:
         df.loc[df[metiers_code_col].str[:3].isin(families_nlp), "score"] += 3
@@ -127,7 +137,7 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
     return df.sort_values(by="score", ascending=False).head(5), families_nlp, keywords_nlp
 
 # ---------------------
-# FONCTION PDF SÉCURISÉE UTF-8 + largeur dynamique
+# PDF SAFE + LARGEUR DYNAMIQUE A4
 # ---------------------
 def safe_text(txt):
     if txt is None:
@@ -135,18 +145,19 @@ def safe_text(txt):
     return str(txt).encode('latin-1', 'replace').decode('latin-1')
 
 def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme, secteur, suggestions, families_nlp, keywords_nlp):
-    pdf = FPDF()
-    pdf.add_page()
+    pdf = FPDF(format='A4')
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_margins(left=15, top=15, right=15)
+    pdf.add_page()
+    pdf.set_font("Verdana", "B", 16)
     pdf.cell(0, 10, safe_text("Plan d'action professionnel"), ln=True)
     pdf.set_font("Helvetica", "", 12)
 
-    usable_width = pdf.w - 2 * pdf.l_margin
+    usable_width = pdf.w - pdf.l_margin - pdf.r_margin
 
     def section(title):
         pdf.ln(5)
-        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_font("Verdana", "B", 13)
         pdf.cell(0, 8, safe_text(title), ln=True)
         pdf.set_font("Helvetica", "", 11)
 
@@ -159,7 +170,7 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
     pdf.multi_cell(usable_width, 7, safe_text(f"Rythme : {rythme}"))
     pdf.multi_cell(usable_width, 7, safe_text(f"Secteur préféré : {secteur}"))
 
-    section("🧠 Analyse IA des objectifs")
+    section("🧠 Analyse Poussée")
     if keywords_nlp:
         pdf.multi_cell(usable_width, 7, safe_text(f"Mots-clés détectés : {', '.join(keywords_nlp)}"))
         pdf.multi_cell(usable_width, 7, safe_text(f"Familles ROME associées : {', '.join(families_nlp)}"))
@@ -179,7 +190,6 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
 # INTERFACE UTILISATEUR
 # ---------------------
 if metiers_df is not None:
-
     with st.form("form_profil"):
         col1, col2 = st.columns(2)
 
@@ -222,7 +232,7 @@ if metiers_df is not None:
 
         st.success("Analyse terminée ✔")
 
-        st.subheader("🧠 Analyse IA de vos objectifs")
+        st.subheader("🧠 Analyse Poussée")
         if kw_nlp:
             st.markdown(f"**Mots-clés détectés :** {', '.join(kw_nlp)}")
             st.markdown(f"**Familles ROME associées :** {', '.join(fam_nlp)}")
