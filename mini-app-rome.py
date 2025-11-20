@@ -5,14 +5,13 @@ from io import BytesIO
 from datetime import date
 
 # ---------------------
-# CONFIG PAGE
+# CONFIGURATION PAGE
 # ---------------------
 st.set_page_config(page_title="Orientation Professionnelle ROME", page_icon="🎯", layout="wide")
 st.title("🎯 Questionnaire d'Orientation Professionnelle")
-st.markdown("**Basé sur les données ROME officielles – Analyse enrichie par IA (NLP)**")
+st.markdown("**Basé sur les données ROME officielles – Analyse enrichie (NLP)**")
 
 LAST_UPDATE = date.today().strftime("%d-%m-%Y")
-
 
 # ---------------------
 # CHARGEMENT DONNÉES
@@ -29,16 +28,12 @@ def load_rome_data():
         st.error(f"Erreur chargement ROME : {e}")
         return None, None, None, None
 
-
 metiers_df, competences_df, centres_interet_df, correspondances_df = load_rome_data()
 
 # ---------------------
-# FONCTION DE SECURITE COLONNES
+# SECURITE COLONNES
 # ---------------------
 def get_code_rome_column(df, df_name="DataFrame"):
-    """
-    Vérifie le nom de colonne pour code_rome et retourne le nom correct ou None
-    """
     if "code_rome" in df.columns:
         return "code_rome"
     elif "Code_Rome" in df.columns:
@@ -47,7 +42,6 @@ def get_code_rome_column(df, df_name="DataFrame"):
         st.error(f"❌ La colonne code_rome est introuvable dans {df_name}")
         st.write(f"Colonnes disponibles : {df.columns.tolist()}")
         return None
-
 
 # ---------------------
 # SECTEURS → FAMILLES ROME
@@ -91,7 +85,6 @@ def analyse_objectifs_nlp(objectifs):
             families_detected.extend(families)
     return list(set(families_detected)), keywords
 
-
 # ---------------------
 # MATCHER MÉTIERS SÉCURISÉ
 # ---------------------
@@ -100,10 +93,8 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
     df = metiers_df.copy()
     df["score"] = 0
 
-    # Récup colonne code_rome
     metiers_code_col = get_code_rome_column(df, "metiers_df")
-    compet_code_col = get_code_rome_column(competences_df, "competences_df")
-    if not metiers_code_col or not compet_code_col:
+    if not metiers_code_col:
         return pd.DataFrame(), [], []
 
     # 1. Centres d'intérêt
@@ -116,26 +107,18 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
 
     # 2. Compétences techniques
     for comp in compet_tech:
-        df.loc[df["libelle_rome"].str.contains(comp.split(" / ")[0], case=False), "score"] += 1
+        df.loc[df["libelle_rome"].str.contains(comp.split(" / ")[0], case=False, na=False), "score"] += 1
 
     # 3. Soft skills
     for skill in soft_skills:
-        df.loc[df["libelle_rome"].str.contains(skill.split(" ")[0], case=False), "score"] += 0.5
+        df.loc[df["libelle_rome"].str.contains(skill.split(" ")[0], case=False, na=False), "score"] += 0.5
 
     # 4. Secteur
     familles_rome = SECTEURS_ROME.get(secteur, [])
     if familles_rome:
         df.loc[df[metiers_code_col].str[:3].isin(familles_rome), "score"] += 2
 
-    # 5. Matching compétences ROME
-    for _, row in competences_df.iterrows():
-        rome = row[compet_code_col]
-        comp = str(row["libelle_competence"]).lower()
-        for user_comp in compet_tech:
-            if user_comp.split(" / ")[0].lower() in comp:
-                df.loc[df[metiers_code_col] == rome, "score"] += 1
-
-    # 6. NLP objectifs
+    # 5. NLP objectifs
     families_nlp, keywords_nlp = analyse_objectifs_nlp(objectifs)
     if families_nlp:
         df.loc[df[metiers_code_col].str[:3].isin(families_nlp), "score"] += 3
@@ -143,49 +126,52 @@ def matcher_metiers(centres_user, compet_tech, soft_skills, secteur, objectifs):
 
     return df.sort_values(by="score", ascending=False).head(5), families_nlp, keywords_nlp
 
+# ---------------------
+# FONCTION PDF SÉCURISÉE UTF-8
+# ---------------------
+def safe_text(txt):
+    if txt is None:
+        return ""
+    return str(txt).encode('latin-1', 'replace').decode('latin-1')
 
-# ---------------------
-# PDF GENERATOR
-# ---------------------
 def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme, secteur, suggestions, families_nlp, keywords_nlp):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_font("Helvetica", "B", 16)
-    pdf.cell(0, 10, "Plan d'action professionnel", ln=True)
+    pdf.cell(0, 10, safe_text("Plan d'action professionnel"), ln=True)
     pdf.set_font("Helvetica", "", 12)
 
     def section(title):
         pdf.ln(5)
         pdf.set_font("Helvetica", "B", 13)
-        pdf.cell(0, 8, title, ln=True)
+        pdf.cell(0, 8, safe_text(title), ln=True)
         pdf.set_font("Helvetica", "", 11)
 
     section("👤 Profil")
-    pdf.multi_cell(0, 7, f"Nom : {nom}")
-    pdf.multi_cell(0, 7, f"Objectifs : {objectifs}")
-    pdf.multi_cell(0, 7, f"Compétences techniques : {', '.join(compet_tech)}")
-    pdf.multi_cell(0, 7, f"Compétences transversales : {', '.join(soft_skills)}")
-    pdf.multi_cell(0, 7, f"Mode de travail : {mode_travail}")
-    pdf.multi_cell(0, 7, f"Rythme : {rythme}")
-    pdf.multi_cell(0, 7, f"Secteur préféré : {secteur}")
+    pdf.multi_cell(0, 7, safe_text(f"Nom : {nom}"))
+    pdf.multi_cell(0, 7, safe_text(f"Objectifs : {objectifs}"))
+    pdf.multi_cell(0, 7, safe_text(f"Compétences techniques : {', '.join(compet_tech)}"))
+    pdf.multi_cell(0, 7, safe_text(f"Compétences transversales : {', '.join(soft_skills)}"))
+    pdf.multi_cell(0, 7, safe_text(f"Mode de travail : {mode_travail}"))
+    pdf.multi_cell(0, 7, safe_text(f"Rythme : {rythme}"))
+    pdf.multi_cell(0, 7, safe_text(f"Secteur préféré : {secteur}"))
 
     section("🧠 Analyse IA des objectifs")
     if keywords_nlp:
-        pdf.multi_cell(0, 7, f"Mots-clés détectés : {', '.join(keywords_nlp)}")
-        pdf.multi_cell(0, 7, f"Familles ROME associées : {', '.join(families_nlp)}")
+        pdf.multi_cell(0, 7, safe_text(f"Mots-clés détectés : {', '.join(keywords_nlp)}"))
+        pdf.multi_cell(0, 7, safe_text(f"Familles ROME associées : {', '.join(families_nlp)}"))
     else:
         pdf.multi_cell(0, 7, "Aucun mot-clé détecté.")
 
     section("💼 Métiers recommandés")
     for _, row in suggestions.iterrows():
-        pdf.multi_cell(0, 7, f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}")
+        pdf.multi_cell(0, 7, safe_text(f"- {row['libelle_rome']} (ROME {row['code_rome']}) – Score {row['score']}"))
 
     buffer = BytesIO()
     pdf.output(buffer)
     buffer.seek(0)
     return buffer
-
 
 # ---------------------
 # INTERFACE UTILISATEUR
