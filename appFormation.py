@@ -131,7 +131,7 @@ st.markdown("""
         color: var(--text-color);
         border-radius: 8px 8px 0 0;
         transition: all 0.3s ease;
-        gap: 20px;
+        gap: 60px;
     }
     
     .stTabs [aria-selected="true"] {
@@ -211,7 +211,7 @@ st.markdown("""
 # ------------------------------------
 with st.sidebar:
     st.markdown(
-        "<h3 style='text-align: center;'>**France Travail**</h3>", 
+        "<h3 style='text-align: center;'><b>France Travail</b></h3>", 
         unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 📞 Contacts utiles")
