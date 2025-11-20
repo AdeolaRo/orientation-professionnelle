@@ -251,13 +251,7 @@ if metiers_df is not None:
             fam_nlp, kw_nlp
         )
 
-       # st.download_button(
-            "📄 Télécharger le PDF",
-            data=pdf_file,
-            file_name=f"Plan_Orientation_{nom.replace(' ','_')}.pdf",
-            mime="application/pdf"
-        )
-
+       
 # FOOTER
 st.markdown("---")
 st.markdown(
