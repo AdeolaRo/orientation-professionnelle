@@ -1,6 +1,7 @@
 import streamlit as st
 import sys
 from datetime import datetime
+from datetime import date
 
 # ------------------------------------
 # CONFIGURATION DE LA PAGE
@@ -18,7 +19,7 @@ st.set_page_config(
 )
 
 APP_VERSION = "3.3.0"
-LAST_UPDATE = "2025-10-24"
+LAST_UPDATE = date.today().strftime("%d-%m-%Y")
 
 # ------------------------------------
 # STYLES CSS AVEC MODE SOMBRE/CLAIR
