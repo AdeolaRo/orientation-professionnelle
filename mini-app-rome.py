@@ -149,7 +149,7 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_margins(left=15, top=15, right=15)
     pdf.add_page()
-    pdf.set_font("Verdana", "B", 16)
+    pdf.set_font("Courier", "B", 16)
     pdf.cell(0, 10, safe_text("Plan d'action professionnel"), ln=True)
     pdf.set_font("Helvetica", "", 12)
 
@@ -157,7 +157,7 @@ def generate_pdf(nom, objectifs, compet_tech, soft_skills, mode_travail, rythme,
 
     def section(title):
         pdf.ln(5)
-        pdf.set_font("Verdana", "B", 13)
+        pdf.set_font("Courier", "B", 13)
         pdf.cell(0, 8, safe_text(title), ln=True)
         pdf.set_font("Helvetica", "", 11)
 
