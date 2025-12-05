@@ -1,6 +1,8 @@
 import streamlit as st
-import sys
 from datetime import datetime
+from fpdf import FPDF
+from fpdf.enums import XPos, YPos
+from io import BytesIO
 
 # ------------------------------------
 # CONFIGURATION DE LA PAGE
@@ -13,11 +15,11 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.francetravail.fr',
         'Report a bug': "https://github.com/AdeolaRo/orientation-professionnelle/issues",
-        'About': "Simulateur d'aides à la formation - Version 3.3"
+        'About': "Simulateur d'aides à la formation - Version 3.5"
     }
 )
 
-APP_VERSION = "3.3.0"
+APP_VERSION = "3.5.0"
 LAST_UPDATE = "2025-10-24"
 
 # ------------------------------------
@@ -312,35 +314,6 @@ with tabs[0]:
         submitted = st.form_submit_button("🔍 Lancer la simulation")
 
     if submitted:
-        # Popup de résultats avec Streamlit natif
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #1f4e79, #2e7d32);
-            padding: 2rem;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            margin: 2rem 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            animation: slideIn 0.5s ease-out;
-        ">
-            <h2 style="margin-bottom: 1rem; font-size: 1.8rem;">🎯 Résultat de votre simulation</h2>
-        </div>
-        
-        <style>
-            @keyframes slideIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(-30px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
         st.markdown("### 📋 Détails de votre simulation")
 
         def box(type_, message, details=""):
@@ -355,6 +328,128 @@ with tabs[0]:
             """, unsafe_allow_html=True)
             
             return message, details
+        
+        def get_remuneration_details(type_remuneration):
+            """Retourne les détails sur une rémunération spécifique"""
+            details = {
+                "AREF": """
+                ### 💰 AREF - Allocation d'aide au retour à l'emploi - Formation
+                
+                **Montant :** Équivalent à votre ARE actuelle
+                
+                **Durée :** Pendant toute la durée de la formation (≥ 40h)
+                
+                **Conditions :**
+                - Formation prescrite par France Travail
+                - Respecter l'assiduité
+                - Actualiser votre situation chaque mois
+                - Formation d'au moins 40 heures
+                
+                **Versement :** Mensuel, comme l'ARE
+                """,
+                "RFF": """
+                ### 💰 RFF - Rémunération de Fin de Formation
+                
+                **Montant :** Plafonnée à 652,02 € / mois selon le décret
+                
+                **Durée :** Jusqu'à la fin de la formation (période non couverte par l'ARE)
+                
+                **Conditions :**
+                - Vos droits ARE s'épuisent pendant la formation
+                - Formation toujours en cours
+                - Demande à faire avant l'épuisement des droits
+                
+                **Versement :** Mensuel, équivalent à l'ARE
+                """,
+                "RFFT": """
+                ### 💰 RFFT - Rémunération de Formation France Travail
+                
+                **Montant :** De 224,68 € à 769,49 € / mois
+                - Jusqu'à 2 170 € pour travailleurs handicapés
+                
+                **Durée :** Jusqu'à 3 ans maximum pour une même formation
+                
+                **Conditions :**
+                - Demandeurs d'emploi non indemnisés
+                - Formation prescrite par France Travail
+                - Formation d'au moins 120 heures généralement
+                
+                **Versement :** Mensuel, après attestation d'entrée en formation
+                """,
+                "RSFP": """
+                ### 💰 RSFP - Rémunération des Stagiaires de la Formation Professionnelle
+                
+                **Montant (barème indicatif) :**
+                - < 18 ans : 220,92 €/mois
+                - 18-25 ans : 561,68 €/mois
+                - 26 ans et + : 769,49 €/mois
+                
+                **Durée :** Pendant toute la durée de la formation
+                
+                **Conditions :**
+                - Formation financée par la Région ou l'État
+                - Respecter l'assiduité
+                - Formation agréée
+                
+                **Versement :** Mensuel
+                """
+            }
+            return details.get(type_remuneration, "")
+        
+        def get_formation_info(formation_type):
+            """Retourne les informations sur le type de formation"""
+            if formation_type == "Formation France Travail":
+                return """
+                ### 📘 Formation France Travail
+                
+                **À qui s'adresse-t-elle ?**
+                - Demandeurs d'emploi inscrits à France Travail
+                - Formation agréée par France Travail
+                - S'inscrit dans votre Projet Personnel d'Accès à l'Emploi (PPAE)
+                
+                **Conditions :**
+                - Validation par votre conseiller France Travail
+                - Le centre de formation valide vos prérequis
+                - Formation d'au moins 40 heures pour certaines rémunérations
+                
+                **Objectifs :**
+                - Acquérir de nouvelles compétences
+                - Se reconvertir
+                - Renforcer son employabilité
+                - Métiers en tension
+                """
+            elif "SFER" in formation_type or "Région" in formation_type:
+                return """
+                ### 🌍 Formation Régionale (SFER)
+                
+                **Dispositif SFER - Se Former pour un Emploi en Région**
+                
+                **À qui s'adresse-t-elle ?**
+                - Demandeurs d'emploi majeurs inscrits à France Travail
+                - Salariés en contrat aidé ou à temps partiel (<24h/semaine)
+                - Personnes en reconversion selon les cas
+                
+                **Parcours proposés :**
+                - **Découverte** : définir ou confirmer un projet professionnel
+                - **Qualifiant** : formation certifiante orientée métier
+                - **Perfectionnement** : modules courts pour renforcer les compétences
+                - **Filières d'avenir** : secteurs stratégiques (industrie, électromobilité, bâtiment durable…)
+                
+                **Financement :**
+                - Financement intégral par la Région (100%)
+                - Gratuit pour le demandeur d'emploi
+                
+                **Rémunération :**
+                - Les indemnisés continuent à percevoir leur ARE
+                - Les non-indemnisés peuvent percevoir une indemnisation ASP
+                
+                **Démarches :**
+                - Être inscrit à France Travail
+                - Avoir un projet professionnel validé
+                - Vérifier que la formation est labellisée SFER
+                - Respecter l'assiduité et déclarer sa situation chaque mois
+                """
+            return ""
 
         # Déterminer le résultat principal
         main_result = ""
@@ -401,31 +496,179 @@ with tabs[0]:
             if formation_duree == "> 40 heures":
                 box("success", "✅ Vous pouvez bénéficier de l'AREF", 
                     "L'AREF (Allocation d'aide au retour à l'emploi - Formation) est versée pendant la formation, sous conditions d'assiduité.")
+                
+                # Informations détaillées sur l'AREF
+                st.markdown("### 💰 Détails sur l'AREF")
+                st.markdown(get_remuneration_details("AREF"), unsafe_allow_html=True)
+                
+                # Informations sur la formation
+                st.markdown("### 📘 Informations sur votre formation")
+                st.markdown(get_formation_info(formation_type), unsafe_allow_html=True)
+                
                 if droits_fin == "Non":
                     box("info", "ℹ️ Vos droits ARE ne couvrent pas toute la formation", 
                         "Vous pouvez demander la RFF (Rémunération de Fin de Formation) pour la période restante.")
+                    
+                    # Informations détaillées sur la RFF
+                    st.markdown("### 💰 Détails sur la RFF")
+                    st.markdown(get_remuneration_details("RFF"), unsafe_allow_html=True)
+                        
                 elif droits_fin == "Je ne sais pas":
                     box("warning", "❓ Vérification nécessaire", 
                         "Contactez votre conseiller France Travail pour connaître la durée exacte de vos droits.")
             else:
                 box("warning", "⚠️ Formation courte", "Les formations de moins de 40h ne donnent généralement pas droit à l'AREF.")
+                
+                # Informations alternatives
+                st.markdown("### 💡 Alternatives possibles")
+                st.markdown("""
+                **Options pour les formations courtes :**
+                - **RSFP (Région)** : Vérifiez auprès de votre Conseil Régional
+                - **Aides régionales** : Certaines régions proposent des dispositifs spécifiques
+                - **Formation continue** : Possibilité de compléter avec d'autres modules
+                
+                **Conseil :** Contactez votre conseiller France Travail pour connaître les alternatives disponibles dans votre région.
+                """, unsafe_allow_html=True)
         else:
             if formation_type == "Formation France Travail":
                 box("success", "✅ Vous pouvez demander la RFFT", 
                     "Rémunération de Formation France Travail, pour les non-indemnisés suivant une formation agréée.")
+                
+                # Informations détaillées sur la RFFT
+                st.markdown("### 💰 Détails sur la RFFT")
+                st.markdown(get_remuneration_details("RFFT"), unsafe_allow_html=True)
+                
+                # Informations sur la formation
+                st.markdown("### 📘 Informations sur votre formation")
+                st.markdown(get_formation_info(formation_type), unsafe_allow_html=True)
+                    
             elif formation_type == "Formation Région (ex : SFER)":
                 box("info", "ℹ️ Formation régionale", 
                     "Vérifiez auprès de votre **Conseil Régional** : une rémunération régionale (stagiaire de la formation professionnelle) peut être disponible.")
+                
+                # Informations détaillées sur SFER
+                st.markdown("### 🌍 Détails sur le dispositif SFER")
+                st.markdown(get_formation_info(formation_type), unsafe_allow_html=True)
+                
+                # Informations sur RSFP
+                st.markdown("### 💰 Rémunération RSFP possible")
+                st.markdown(get_remuneration_details("RSFP"), unsafe_allow_html=True)
+                    
             else:
                 box("warning", "⚠️ Financement requis", "Une validation par France Travail ou la Région est obligatoire pour obtenir une rémunération.")
+                
+                # Informations générales
+                st.markdown("### 📘 Informations sur les formations")
+                st.markdown("""
+                **🎓 Formations disponibles :**
+                
+                **Formation France Travail :**
+                - Formation agréée par France Travail
+                - Validation par votre conseiller
+                - Peut donner droit à la RFFT
+                
+                **Formation Régionale (SFER) :**
+                - Financement 100% par la Région
+                - Gratuit pour le demandeur d'emploi
+                - Peut donner droit à la RSFP
+                
+                **Conseil :** Contactez votre conseiller France Travail pour identifier la formation adaptée à votre projet.
+                """, unsafe_allow_html=True)
 
         st.markdown("""
         ---
         ### ✅ Prochaines étapes :
         - 💬 Contactez votre conseiller France Travail  
         - 📝 Déposez votre dossier de rémunération (AREF, RFF, RFFT, etc.)  
-        - 🔁 Actualisez mensuellement votre situation (“en formation”)  
+        - 🔁 Actualisez mensuellement votre situation ("en formation")  
         """)
+        
+        # Fonction pour générer le PDF
+        def generate_pdf(are, formation_type, formation_duree, droits_fin, main_result, main_details):
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 10, "Résultat de simulation - Aides à la Formation", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.ln(5)
+            
+            # Résultat principal
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "Résultat de votre simulation", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.set_font("Helvetica", "", 12)
+            pdf.cell(0, 8, main_result, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 8, main_details, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.ln(5)
+            
+            # Informations sur la situation
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 10, "Votre situation :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.set_font("Helvetica", "", 11)
+            pdf.cell(0, 7, f"ARE actuelle : {are}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 7, f"Type de formation : {formation_type}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 7, f"Durée : {formation_duree}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 7, f"Droits ARE : {droits_fin}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.ln(5)
+            
+            # Détails sur la rémunération
+            if are == "Oui" and formation_duree == "> 40 heures":
+                pdf.set_font("Helvetica", "B", 12)
+                pdf.cell(0, 10, "Détails sur l'AREF :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.set_font("Helvetica", "", 11)
+                pdf.cell(0, 7, "Montant : Equivalent a votre ARE actuelle", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.cell(0, 7, "Duree : Pendant toute la duree de la formation (>= 40h)", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.cell(0, 7, "Conditions : Formation prescrite par France Travail, assiduite requise", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                if droits_fin == "Non":
+                    pdf.ln(3)
+                    pdf.set_font("Helvetica", "B", 12)
+                    pdf.cell(0, 10, "Détails sur la RFF :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    pdf.set_font("Helvetica", "", 11)
+                    pdf.cell(0, 7, "Montant : Plafonnee a 652,02 EUR / mois", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                    pdf.cell(0, 7, "Duree : Jusqu'a la fin de la formation", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            elif formation_type == "Formation France Travail":
+                pdf.set_font("Helvetica", "B", 12)
+                pdf.cell(0, 10, "Détails sur la RFFT :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.set_font("Helvetica", "", 11)
+                pdf.cell(0, 7, "Montant : De 224,68 EUR a 769,49 EUR / mois", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.cell(0, 7, "Duree : Jusqu'a 3 ans maximum", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.cell(0, 7, "Conditions : Non-indemnises, formation prescrite par France Travail", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            elif "SFER" in formation_type or "Région" in formation_type:
+                pdf.set_font("Helvetica", "B", 12)
+                pdf.cell(0, 10, "Détails sur le dispositif SFER :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.set_font("Helvetica", "", 11)
+                pdf.cell(0, 7, "Financement : 100% par la Region", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.cell(0, 7, "Gratuit pour le demandeur d'emploi", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.ln(3)
+                pdf.set_font("Helvetica", "B", 12)
+                pdf.cell(0, 10, "Rémunération RSFP possible :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                pdf.set_font("Helvetica", "", 11)
+                pdf.cell(0, 7, "Montant : 220,92 EUR a 769,49 EUR / mois selon l'age", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            
+            pdf.ln(5)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 10, "Prochaines etapes :", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.set_font("Helvetica", "", 11)
+            pdf.cell(0, 7, "- Contacter votre conseiller France Travail", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 7, "- Deposer votre dossier de remuneration", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.cell(0, 7, "- Actualiser mensuellement votre situation", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            
+            pdf.ln(10)
+            pdf.set_font("Helvetica", "", 9)
+            pdf.cell(0, 5, f"Application informative - Version {APP_VERSION} - {LAST_UPDATE}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            
+            return pdf
+        
+        # Bouton de téléchargement PDF
+        if st.button("📄 Télécharger le résultat en PDF"):
+            pdf = generate_pdf(are, formation_type, formation_duree, droits_fin, main_result, main_details)
+            buffer = BytesIO()
+            pdf.output(buffer)
+            buffer.seek(0)
+            st.download_button(
+                label="📥 Télécharger le PDF",
+                data=buffer,
+                file_name=f"Simulation_Formation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                mime="application/pdf"
+            )
 
 # ====================================
 # ONGLET 2 : FORMATIONS
