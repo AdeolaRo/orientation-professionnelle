@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -5,389 +6,376 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🎓 Simulation Rémunération Formation</title>
     <style>
-        /* Variables CSS pour les thèmes */
-        :root {
-            --primary-color: #1f4e79;
-            --secondary-color: #2e7d32;
-            --success-color: #4caf50;
-            --info-color: #2196f3;
-            --warning-color: #ff9800;
-            --text-color: #262730;
-            --bg-color: #ffffff;
-            --card-bg: #f8f9fa;
-            --border-color: #e0e0e0;
-            --sidebar-width: 280px;
-        }
-        
-        /* Mode sombre */
-        .dark-theme {
-            --text-color: #f0f0f0 !important;
-            --bg-color: #0e1117 !important;
-            --card-bg: #262730 !important;
-            --border-color: #3a3a3a !important;
-        }
-        
-        /* Mode clair */
-        .light-theme {
-            --text-color: #262730 !important;
-            --bg-color: #ffffff !important;
-            --card-bg: #f8f9fa !important;
-            --border-color: #e0e0e0 !important;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-        
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--card-bg);
-            padding: 1.5rem;
-            border-right: 1px solid var(--border-color);
-            overflow-y: auto;
-            position: fixed;
-            height: 100vh;
-        }
-        
-        .sidebar h3 {
-            color: var(--primary-color);
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-        
-        .sidebar hr {
-            border: none;
-            border-top: 1px solid var(--border-color);
-            margin: 1rem 0;
-        }
-        
-        .sidebar ul {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .sidebar li {
-            margin: 0.5rem 0;
-        }
-        
-        .theme-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-        
-        .theme-btn {
-            padding: 0.6rem;
-            border: 2px solid var(--border-color);
-            background: var(--card-bg);
-            color: var(--text-color);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .theme-btn:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: scale(1.05);
-        }
-        
-        .theme-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-        
-        /* Main content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            width: calc(100% - var(--sidebar-width));
-        }
-        
-        /* Header */
-        .main-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 2rem;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .main-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .main-header h3 {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-        
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid var(--border-color);
-            flex-wrap: wrap;
-        }
-        
-        .tab {
-            padding: 1rem 1.5rem;
-            background: var(--card-bg);
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-size: 1rem;
-            color: var(--text-color);
-            transition: all 0.3s ease;
-            border-radius: 8px 8px 0 0;
-        }
-        
-        .tab:hover {
-            background: rgba(31, 78, 121, 0.1);
-        }
-        
-        .tab.active {
-            background: var(--primary-color);
-            color: white;
-            border-bottom-color: var(--primary-color);
-        }
-        
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Form */
-        .form-container {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-        
-        .radio-group, .select-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .radio-option, .select-option {
-            padding: 0.8rem;
-            background: var(--bg-color);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .radio-option:hover, .select-option:hover {
-            border-color: var(--primary-color);
-            background: rgba(31, 78, 121, 0.05);
-        }
-        
-        .radio-option input[type="radio"] {
-            margin-right: 0.5rem;
-        }
-        
-        .select-group select {
-            padding: 0.8rem;
-            background: var(--bg-color);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-color);
-            font-size: 1rem;
-            width: 100%;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            width: 100%;
-            margin-top: 1rem;
-        }
-        
-        .submit-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-        
-        /* Result boxes */
-        .result-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 2rem;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            margin: 2rem 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .result-header h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-        }
-        
-        .result-header h3 {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .result-header p {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-        
-        .info-box, .success-box, .warning-box {
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1rem 0;
-            border-left: 6px solid;
-            transition: all 0.3s ease;
-        }
-        
-        .info-box {
-            background: rgba(33, 150, 243, 0.1);
-            border-left-color: var(--info-color);
-            color: var(--text-color);
-        }
-        
-        .success-box {
-            background: rgba(76, 175, 80, 0.1);
-            border-left-color: var(--success-color);
-            color: var(--text-color);
-        }
-        
-        .warning-box {
-            background: rgba(255, 152, 0, 0.1);
-            border-left-color: var(--warning-color);
-            color: var(--text-color);
-        }
-        
-        .info-box h4, .success-box h4, .warning-box h4 {
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-        
-        /* Download button */
-        .download-btn {
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            margin: 1.5rem 0;
-            width: 100%;
-        }
-        
-        .download-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-color);
-            opacity: 0.7;
-            font-size: 0.9rem;
-            margin-top: 3rem;
-            border-top: 1px solid var(--border-color);
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: relative;
-                height: auto;
-            }
-            
-            .main-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
-            
-            .tab {
-                width: 100%;
-            }
-        }
+        /* Variables CSS France Travail */
+    /* =====================================
+   Variables globales
+===================================== */
+:root {
+    /* Couleurs principales */
+    --primary-color: #5A7D9A;     /* Bleu doux */
+    --secondary-color: #8FA6B3;   /* Gris bleuté */
+    --success-color: #4CAF7F;     /* Vert doux */
+    --info-color: #6CA0DC;        /* Bleu pastel */
+    --warning-color: #D9A66C;     /* Orange doux */
+
+    /* Couleurs texte et fond */
+    --text-color: #EAEAEA;
+    --bg-color: #1E1E2E;
+    --card-bg: #2A2A3D;
+    --border-color: #3A3A50;
+
+    --sidebar-width: 280px;
+}
+
+/* Mode clair doux */
+.light-theme {
+    --text-color: #1E1E2E;
+    --bg-color: #F5F5F7;
+    --card-bg: #FFFFFF;
+    --border-color: #D1D1D6;
+}
+
+/* Mode sombre futuriste */
+.dark-theme {
+    --text-color: #EAEAEA;
+    --bg-color: #1E1E2E;
+    --card-bg: #2A2A3D;
+    --border-color: #3A3A50;
+}
+
+/* =====================================
+   Global Reset
+===================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Marianne, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* =====================================
+   Container principal
+===================================== */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 2rem;
+    gap: 2rem;
+}
+
+/* =====================================
+   Sidebar
+===================================== */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    position: sticky;
+    top: 2rem;
+    height: auto;
+}
+
+.sidebar h3 {
+    color: var(--primary-color);
+    margin: 1.5rem 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.sidebar hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1rem 0;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.sidebar li {
+    margin: 0.5rem 0;
+}
+
+.theme-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.theme-btn {
+    padding: 0.6rem;
+    border: 2px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-color);
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.theme-btn:hover, .theme-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* =====================================
+   Main content
+===================================== */
+.main-content {
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Header */
+.main-header {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.main-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.main-header h3 {
+    font-size: 1.2rem;
+    opacity: 0.8;
+}
+
+/* =====================================
+   Tabs
+===================================== */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.tab {
+    padding: 1rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.tab:hover {
+    background: rgba(92, 125, 154, 0.1);
+}
+
+.tab.active {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+/* Contenu des tabs */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================
+   Formulaires
+===================================== */
+.form-container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.radio-group, .select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.radio-option, .select-option {
+    padding: 0.8rem;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radio-option:hover, .select-option:hover {
+    border-color: var(--primary-color);
+    background: rgba(92, 125, 154, 0.1);
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 0.5rem;
+}
+
+.select-group select {
+    padding: 0.8rem;
+    background: var(--bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    font-size: 1rem;
+    width: 100%;
+}
+
+/* Bouton submit */
+.submit-btn, .download-btn {
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.submit-btn:hover, .download-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* =====================================
+   Resultats
+===================================== */
+.result-header {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 15px;
+    color: var(--text-color);
+    text-align: center;
+    margin: 2rem 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+.result-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.result-header h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.result-header p {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+/* Info/Success/Warning boxes */
+.info-box, .success-box, .warning-box {
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    border-left: 6px solid;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.info-box { border-left-color: var(--info-color); }
+.success-box { border-left-color: var(--success-color); }
+.warning-box { border-left-color: var(--warning-color); }
+
+/* =====================================
+   Footer
+===================================== */
+.footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.9rem;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* =====================================
+   Responsive
+===================================== */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sidebar {
+        width: 90%;
+        top: 0;
+    }
+
+    .main-content {
+        width: 95%;
+    }
+
+    .tabs {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tab {
+        width: 100%;
+    }
+}
+
+
     </style>
+
 </head>
+
+
+
 <body class="light-theme">
     <div class="container">
         <!-- Sidebar -->
@@ -406,8 +394,8 @@
             <h3>📞 Contacts utiles</h3>
             <p><strong>France Travail</strong><br>
             📞 3949 (appel non surtaxé)<br>
-            🌐 <a href="https://www.france-travail.fr" target="_blank" style="color: var(--primary-color);">france-travail.fr</a></p>
-            
+            🌐 <a href="https://www.francetravail.fr" target="_blank" style="color: var(--primary-color);">francetravail.fr</a></p>
+            <br>
             <p><strong>Conseil Régional</strong><br>
             🔍 Consultez le site web de votre région pour les dispositifs régionaux.</p>
             
@@ -420,25 +408,7 @@
             </ul>
             
             <hr>
-            <h3>🔒 Sécurisation de la Formation</h3>
-            <p><strong>Étapes recommandées :</strong></p>
-            <ol style="padding-left: 1.5rem; margin-top: 0.5rem;">
-                <li style="margin: 0.5rem 0;"><strong>Définir le projet de formation</strong><br>
-                - Identifier ses compétences<br>
-                - Définir ses objectifs professionnels</li>
-                <li style="margin: 0.5rem 0;"><strong>Réaliser l'enquête métier</strong><br>
-                - Analyser le marché de l'emploi<br>
-                - Identifier les débouchés</li>
-                <li style="margin: 0.5rem 0;"><strong>Faire une immersion</strong><br>
-                - Découvrir le métier en pratique<br>
-                - Valider son choix</li>
-                <li style="margin: 0.5rem 0;"><strong>Préparer un CV</strong><br>
-                - Mettre en valeur ses compétences<br>
-                - Adapter au secteur visé</li>
-                <li style="margin: 0.5rem 0;"><strong>Préparer une lettre de motivation</strong><br>
-                - Expliquer son projet<br>
-                - Montrer sa motivation</li>
-            </ol>
+           
         </aside>
         
         <!-- Main Content -->
@@ -625,9 +595,9 @@
             
             <!-- Footer -->
             <div class="footer">
-                🛈 Application informative & interactive – Version 3.5.0<br>
-                📅 Dernière mise à jour : 2025-10-24<br>
-                Sources : France Travail, Service Public, Ministère du Travail, C2RP, Centre Inffo, CMA Hauts-de-France.
+                🛈 Application informative <br>
+                📅 Dernière mise à jour : 13-01-2026 <br>
+                Sources : France Travail, Service Public.
             </div>
         </main>
     </div>
@@ -638,6 +608,37 @@
             onload="console.log('jsPDF chargé avec succès')"></script>
     
     <script>
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const formationSelect = document.querySelector('select[name="formation_type"]');
+    formationSelect.addEventListener('change', function() {
+        const existingAlert = document.querySelector('.formation-alert');
+        if (existingAlert) existingAlert.remove();
+
+        if (this.value === "Formation Région (ex : SFER)") {
+            const alertBox = document.createElement('div');
+            alertBox.classList.add('formation-alert');
+            alertBox.textContent = "⚠️ En cas de présence de rémunération ASS pour le DE, veillez à informer la GDD pour éviter les trop-perçus !";
+            alertBox.style.position = 'fixed';
+            alertBox.style.top = '20px';
+            alertBox.style.right = '20px';
+            alertBox.style.backgroundColor = '#ffcc00';
+            alertBox.style.color = '#000';
+            alertBox.style.padding = '15px 20px';
+            alertBox.style.border = '1px solid #333';
+            alertBox.style.borderRadius = '5px';
+            alertBox.style.zIndex = '1000';
+            alertBox.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
+            document.body.appendChild(alertBox);
+
+            setTimeout(() => alertBox.remove(), 3000);
+        }
+    });
+});
+
+
+
         // Theme management
         function setTheme(theme, buttonElement) {
             document.body.classList.remove('light-theme', 'dark-theme');
@@ -878,8 +879,8 @@
             
             // Title
             doc.setFontSize(16);
-            doc.setFont(undefined, 'bold');
-            doc.text('Resultat de simulation - Aides a la Formation', 20, 20);
+            doc.setFont(undefined, 'bold','center');
+            doc.text('Aide Formation', 20, 20);
             
             // Main result
             doc.setFontSize(14);
@@ -996,17 +997,34 @@
             }
             
             // Next steps
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text('Prochaines etapes :', 20, yPos);
-            yPos += 7;
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'normal');
-            doc.text('- Contacter votre conseiller France Travail', 20, yPos);
-            yPos += 7;
-            doc.text('- Deposer votre dossier de remuneration', 20, yPos);
-            yPos += 7;
-            doc.text('- Actualiser mensuellement votre situation', 20, yPos);
+           	doc.setFontSize(12);
+doc.setFont(undefined, 'bold');
+doc.text('Prochaines étapes :', 20, yPos);
+yPos += 7;
+doc.setFontSize(11);
+doc.setFont(undefined, 'normal');
+
+const prochainesEtapes = [
+  "Rechercher une formation auprès d’un organisme de formation (OF)",
+  "Rechercher une immersion professionnelle (PMSMP) si possible, https://immersion-facile.beta.gouv.fr/",
+  "Préparer le curriculum vitae (CV)",
+  "Préparer la lettre de motivation",
+  "Actualiser sa situation chaque fin de mois une fois en formation"
+];
+
+prochainesEtapes.forEach(etape => {
+  // Pour les longues phrases, on utilise splitTextToSize pour couper sur plusieurs lignes si besoin
+  const lines = doc.splitTextToSize(etape, 170);
+  lines.forEach(line => {
+    // Avant d'écrire, on vérifie la hauteur pour éviter de dépasser la page
+    if (yPos > 280) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.text(`- ${line}`, 20, yPos);
+    yPos += 7;
+  });
+});
             
             // Footer
             doc.setFontSize(9);
@@ -1275,6 +1293,8 @@
                 alert('Erreur lors de la génération du PDF: ' + error.message + '\nVeuillez réessayer ou vérifier votre connexion internet.');
             }
         }
+
+
     </script>
 </body>
 </html>
