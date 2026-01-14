@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 APP_VERSION = "3.5.0"
-LAST_UPDATE = "2025-10-24"
+LAST_UPDATE = "13-01-2026"
 
 # ------------------------------------
 # STYLES CSS AVEC MODE SOMBRE/CLAIR
@@ -213,7 +213,7 @@ st.markdown("""
 # ------------------------------------
 with st.sidebar:
     st.markdown(
-        "<h3 style='text-align: center;'><b>France Travail</b></h3>", 
+        "<h3 style='text-align: center;'><b>France Travail</b></h3>",
         unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("### 📞 Contacts utiles")
@@ -236,27 +236,27 @@ with st.sidebar:
     st.markdown("### 🔒 Sécurisation de la Formation")
     st.markdown("""
     **Étapes recommandées :**
-    
+
     1️⃣ **Définir le projet de formation**
     - Identifier vos compétences
-    - Définir vos projet d'évolution professionnel
-    
+    - Définir votre projet d'évolution professionnelle
+
     2️⃣ **Réaliser l'enquête métier**
     - Analyser le marché de l'emploi pour le métier recherché
     - Identifier les débouchés
-    
+
     3️⃣ **Faire une immersion**
     - Découvrir le métier en pratique
-        Grace à l'Immerssion facilité 
-        https://immersion-facile.beta.gouv.fr/accueil-beneficiaires
-    - Réaliser votre immersion pour valider votre choix
-    
+    - Réaliser une PMSMP (immersion professionnelle) via  
+      [immersion-facile.beta.gouv.fr](https://immersion-facile.beta.gouv.fr/accueil-beneficiaires)
+
     4️⃣ **Préparer un CV**
     - Mettre en valeur vos compétences
     - Adapter votre CV au secteur visé
-    
+
     5️⃣ **Préparer une lettre de motivation**
-     Expliquer son projet en montrant sa motivation
+    - Expliquer votre projet
+    - Montrer votre motivation
     """)
 
 # ------------------------------------
@@ -427,6 +427,13 @@ with tabs[0]:
         main_result = ""
         main_details = ""
         
+        # Alerte spécifique pour les formations régionales SFER
+        if formation_type == "Formation Région (ex : SFER)":
+            st.warning(
+                "⚠️ En cas de présence d'une rémunération ASS pour le demandeur d'emploi, "
+                "veuillez informer la GDD pour éviter les trop-perçus."
+            )
+
         if are == "Oui":
             if formation_duree == "> 40 heures":
                 main_result = "✅ Vous pouvez bénéficier de l'AREF"
@@ -550,18 +557,12 @@ with tabs[0]:
         st.markdown("""
         ---
         ### ✅ Prochaines étapes :
-<<<<<<< HEAD
-        - 💬 Contactez votre conseiller France Travail  
-        - 📝 Déposez votre dossier de rémunération (AREF, RFF, RFFT, etc.)  
-        - 🔁 Actualisez mensuellement votre situation ("en formation")  
-=======
-        - 💬 Contactez un Organisme de Formation agréé  
-        - 📝 Mobiliser votre CPF (en cas de somme insuffisante faire une demande d'abondement aif)
-             Sans le CPF demander un devis pour AIF qui sera transmis via ("KAIROS") 
-        - 🔁 Actualisez mensuellement votre situation (“en formation”)  
-
-        AIF : Aide Individuel à la Formation.
->>>>>>> fe354b3c2b163ca77c24741a65ddbbd83c8f9ee8
+        - 🔍 Rechercher une formation auprès d’un Organisme de Formation (OF) agréé  
+        - 🧪 Si possible, réaliser une immersion professionnelle (PMSMP)  
+          via [immersion-facile.beta.gouv.fr](https://immersion-facile.beta.gouv.fr/accueil-beneficiaires)  
+        - 📝 Préparer votre CV en lien avec le métier visé  
+        - ✉️ Rédiger une lettre de motivation expliquant votre projet  
+        - 🔁 Actualiser chaque mois votre situation en indiquant « en formation » une fois la formation démarrée  
         """)
         
         # Fonction pour générer le PDF
